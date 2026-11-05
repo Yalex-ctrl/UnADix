@@ -8,12 +8,12 @@ import { colors } from '@/constants/theme';
 // last child of the screen.
 export function useScreenFlash() {
   const opacity = useSharedValue(0);
-  const [color, setColor] = useState(colors.braquage);
+  const [color, setColor] = useState<string>(colors.braquage);
 
   const flash = useCallback(
     (flashColor: string = colors.braquage) => {
       setColor(flashColor);
-      opacity.value = withSequence(withTiming(1, { duration: 100 }), withTiming(0, { duration: 550 }));
+      opacity.set(withSequence(withTiming(1, { duration: 100 }), withTiming(0, { duration: 550 })));
     },
     [opacity]
   );

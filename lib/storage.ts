@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CATEGORIES } from '@/data/categories';
+import { migrateState, STATE_VERSION } from '@/lib/gameReducer';
 import { GameState } from '@/types';
 
 const SAVED_GAME_KEY = 'unadix:savedGame';
@@ -31,14 +32,17 @@ export type FinishedGame = {
 
 export async function saveGame(state: GameState): Promise<void> {
   try {
-    await AsyncStorage.setItem(SAVED_GAME_KEY, JSON.stringify(state));
+    await AsyncStorage.setItem(SAVED_GAME_KEY, JSON.stringify({ v: STATE_VERSION, state }));
   } catch {}
 }
 
 export async function loadSavedGame(): Promise<GameState | null> {
   try {
     const raw = await AsyncStorage.getItem(SAVED_GAME_KEY);
-    return raw ? (JSON.parse(raw) as GameState) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Anciennes sauvegardes : l'état était stocké directement, sans enveloppe.
+    return migrateState(parsed && typeof parsed === 'object' && 'state' in parsed ? parsed.state : parsed);
   } catch {
     return null;
   }

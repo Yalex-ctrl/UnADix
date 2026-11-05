@@ -38,6 +38,7 @@ export function evaluateRoundTrophies(
   players: Player[],
   events: TrophyEvent[],
   roundCorrectIds: string[],
+  roundAttemptIds: string[],
   lastRanks: Record<string, number>
 ): Result {
   let current: Result = { players, events };
@@ -52,15 +53,17 @@ export function evaluateRoundTrophies(
     if (p.maxStolen >= 8) give(p.id, 'braqueur');
     if (p.stealAttempts >= 2 && p.stealWins === 0) give(p.id, 'kamikaze');
   }
-  if (players.length >= 3 && roundCorrectIds.length === 1) give(roundCorrectIds[0], 'roiDuTheme');
+  // Roi du thème: seul à avoir trouvé alors qu'au moins deux joueurs ont tenté.
+  if (roundAttemptIds.length >= 2 && roundCorrectIds.length === 1) give(roundCorrectIds[0], 'roiDuTheme');
+
+  // Phénix: dernière place STRICTE (non partagée) au classement précédent,
+  // première place seule maintenant. Rien en début de partie (tous à égalité).
   if (players.length >= 3) {
     const ranks = rankOf(players);
-    const lastRank = Math.max(...Object.values(lastRanks), 0);
     const leaders = players.filter((x) => ranks[x.id] === 1);
-    for (const p of players) {
-      if (lastRank > 1 && lastRanks[p.id] === lastRank && leaders.length === 1 && leaders[0].id === p.id) {
-        give(p.id, 'phenix');
-      }
+    if (leaders.length === 1) {
+      const leader = leaders[0];
+      if (lastRanks[leader.id] === players.length) give(leader.id, 'phenix');
     }
   }
   return current;

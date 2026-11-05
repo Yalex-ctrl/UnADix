@@ -110,6 +110,7 @@ export type GameState = {
 
   // Trophées, présentateur, annulation
   roundCorrectIds: string[];
+  roundAttemptIds: string[]; // players who answered a personal question this round
   tenChosenBy: string | null;
   newTrophies: TrophyEvent[];
   commentary: string | null;

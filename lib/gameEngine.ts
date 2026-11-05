@@ -59,3 +59,15 @@ export function computeAuctionRounds(totalRounds: number): number[] {
 export function pickChallengeAuctionRound(totalChallengeRounds: number): number {
   return 1 + Math.floor(Math.random() * totalChallengeRounds);
 }
+
+// Unseen question for a category + level, or null when every one was asked.
+export function pickFreshQuestion(categoryId: string, level: number, askedIds: string[]): Question | null {
+  const unseen = getQuestionsForLevel(categoryId, level).filter((q) => !askedIds.includes(q.id));
+  return unseen.length > 0 ? unseen[Math.floor(Math.random() * unseen.length)] : null;
+}
+
+// Unseen question at a level, from any category, or null.
+export function pickFreshAny(level: number, askedIds: string[]): Question | null {
+  const unseen = ALL_QUESTIONS.filter((q) => q.level === level && !askedIds.includes(q.id));
+  return unseen.length > 0 ? unseen[Math.floor(Math.random() * unseen.length)] : null;
+}
