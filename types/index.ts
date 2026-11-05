@@ -116,6 +116,7 @@ export type GameState = {
   commentary: string | null;
   usedCommentaryIds: string[];
   lastRanks: Record<string, number>;
+  rankDeltas: Record<string, number>; // places gagnées (+) ou perdues (-) à la dernière manche
   lastSteal: { thiefId: string; victimId: string; level: number } | null;
   prevState: GameState | null;
 };

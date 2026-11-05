@@ -1,69 +1,77 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { colors } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { ScreenBody } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 import { Judgement } from '@/types';
-import { gameStyles } from '../gameStyles';
 
 type AnswerRevealProps = {
-  answeringLabel: string;
-  question: { answer: string; acceptedAnswers: string[]; explanation: string };
-  // In thief mode the answer must not be visible to the table until every
-  // steal attempt is over, so the organiser has to opt in to see it.
+  // « Question d'Arnaud · Niveau 5 · 5 pts »
+  context: string;
+  question: { answer: string; acceptedAnswers: string[]; explanation: string; anecdote?: string };
+  // En mode Voleur la réponse ne doit pas être lue par la tablée avant la fin
+  // des tentatives de vol : l'organisateur doit l'afficher volontairement.
   secret?: boolean;
   onJudge: (judgement: Judgement) => void;
 };
 
-export function AnswerReveal({ answeringLabel, question, secret, onJudge }: AnswerRevealProps) {
+export function AnswerReveal({ context, question, secret, onJudge }: AnswerRevealProps) {
   const [shown, setShown] = useState(!secret);
+  const others = question.acceptedAnswers.filter((a) => a !== question.answer);
+
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={gameStyles.eyebrow}>RÉPONSE</Text>
-      <Text style={styles.answeringLabel}>{answeringLabel}</Text>
+    <ScreenBody
+      center
+      bottom={
+        <>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Button label="Faux" icon="x" variant="danger" size="l" style={{ flex: 1 }} onPress={() => onJudge('incorrect')} />
+            <Button label="Juste" icon="check" variant="success" size="l" style={{ flex: 1 }} onPress={() => onJudge('correct')} />
+          </View>
+          <Button label="Accepter quand même" variant="ghost" onPress={() => onJudge('accepted-anyway')} />
+        </>
+      }
+    >
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <T variant="caption" color={palette.textMuted} style={{ letterSpacing: 1 }}>
+          RÉPONSE ATTENDUE
+        </T>
+        <T variant="caption" color={palette.textMuted}>
+          {context}
+        </T>
+      </View>
+
       {shown ? (
         <>
-          <Text style={styles.answerText}>{question.answer}</Text>
-          {question.acceptedAnswers.length > 1 && (
-            <Text style={styles.acceptedText}>
-              Aussi accepté : {question.acceptedAnswers.filter((a) => a !== question.answer).join(', ')}
-            </Text>
+          <T variant="display" center color={palette.success}>
+            {question.answer}
+          </T>
+          {others.length > 0 && (
+            <T variant="caption" color={palette.textMuted} center>
+              Aussi accepté : {others.join(', ')}
+            </T>
           )}
-          {!secret && <Text style={gameStyles.categoryDescription}>{question.explanation}</Text>}
+          {!secret && (
+            <Card tone="soft" style={{ gap: 8 }}>
+              <T variant="body">{question.explanation}</T>
+              {question.anecdote ? (
+                <T variant="caption" color={palette.textMuted}>
+                  {question.anecdote}
+                </T>
+              ) : null}
+            </Card>
+          )}
         </>
       ) : (
-        <Button label="👁 Organisateur : voir la réponse" variant="secondary" onPress={() => setShown(true)} />
+        <Card tone="soft" style={{ alignItems: 'center', gap: 12 }}>
+          <T variant="body" color={palette.textMuted} center>
+            Mode Voleur : la réponse reste cachée à la tablée.
+          </T>
+          <Button label="Organisateur : voir la réponse" icon="eye" variant="secondary" onPress={() => setShown(true)} />
+        </Card>
       )}
-
-      <View style={gameStyles.judgeRow}>
-        <Button label="✅ Bonne réponse" variant="success" onPress={() => onJudge('correct')} />
-        <Button label="❌ Mauvaise réponse" variant="danger" onPress={() => onJudge('incorrect')} />
-      </View>
-      <Button label="⚖️ Accepter quand même" variant="secondary" onPress={() => onJudge('accepted-anyway')} style={styles.acceptAnyway} />
-    </View>
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  answeringLabel: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  answerText: {
-    color: colors.success,
-    fontSize: 28,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  acceptedText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 6,
-    paddingHorizontal: 12,
-  },
-  acceptAnyway: {
-    marginTop: 4,
-  },
-});

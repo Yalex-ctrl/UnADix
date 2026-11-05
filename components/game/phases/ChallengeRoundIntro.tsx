@@ -1,8 +1,10 @@
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { colors, levelColor } from '@/constants/theme';
-import { gameStyles } from '../gameStyles';
+import { Card } from '@/components/ui/Card';
+import { ScreenBody } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 
 type ChallengeRoundIntroProps = {
   round: number;
@@ -14,23 +16,31 @@ type ChallengeRoundIntroProps = {
 
 export function ChallengeRoundIntro({ round, total, level, isAuctionRound, onStart }: ChallengeRoundIntroProps) {
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={gameStyles.eyebrow}>
-        {isAuctionRound ? `ENCHÈRES · DÉFI ${round} / ${total}` : `DÉFI ${round} / ${total}`}
-      </Text>
-      {isAuctionRound ? (
-        <Badge label="Round Enchères" color={colors.auction} textColor={colors.background} />
-      ) : (
-        <View style={gameStyles.levelBadgeWrap}>
-          <Badge label={`Niveau ${level} · ${level} pts`} color={levelColor(level)} />
+    <ScreenBody center bottom={<Button label={isAuctionRound ? "Lancer l'enchère" : 'Commencer'} size="l" onPress={onStart} />}>
+      <Card tone={isAuctionRound ? 'gold' : 'default'} borderColor={isAuctionRound ? palette.gold : palette.border}>
+        <View style={{ alignItems: 'center', gap: 12, paddingVertical: 16 }}>
+          <T variant="caption" color={palette.gold} style={{ letterSpacing: 1 }}>
+            {isAuctionRound ? `DÉFI ${round} / ${total} · ENCHÈRES` : `DÉFI ${round} / ${total}`}
+          </T>
+          {isAuctionRound ? (
+            <T variant="title" center>
+              Round Enchères
+            </T>
+          ) : (
+            <>
+              <T variant="display" numeric>
+                Niveau {level}
+              </T>
+              <Badge label={`${level} pts par bonne réponse`} color={palette.goldSoft} textColor={palette.gold} />
+            </>
+          )}
+          <T variant="body" color={palette.textMuted} center>
+            {isAuctionRound
+              ? 'Les joueurs enchérissent sur le niveau. Le gagnant répond dans son propre thème.'
+              : 'Tout le monde reçoit une question de ce niveau, dans le thème qu’il a choisi.'}
+          </T>
         </View>
-      )}
-      <Text style={gameStyles.categoryDescription}>
-        {isAuctionRound
-          ? 'Les joueurs enchérissent sur le niveau auquel ils pensent pouvoir répondre, chacun dans son propre thème.'
-          : 'Chaque joueur répond dans son propre thème, au même niveau de difficulté.'}
-      </Text>
-      <Button label="Commencer" onPress={onStart} />
-    </View>
+      </Card>
+    </ScreenBody>
   );
 }

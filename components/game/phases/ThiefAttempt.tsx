@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { colors } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { ScreenBody } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 import { Judgement } from '@/types';
-import { gameStyles } from '../gameStyles';
 
 type ThiefAttemptProps = {
-  thiefName: string;
+  thief: { name: string; color: string };
   level: number;
   remaining: number;
   question: { question: string; answer: string; acceptedAnswers: string[] };
@@ -14,42 +16,61 @@ type ThiefAttemptProps = {
   onSkip: () => void;
 };
 
-export function ThiefAttempt({ thiefName, level, remaining, question, onJudge, onSkip }: ThiefAttemptProps) {
+export function ThiefAttempt({ thief, level, remaining, question, onJudge, onSkip }: ThiefAttemptProps) {
   const [peek, setPeek] = useState(false);
+  const others = question.acceptedAnswers.filter((a) => a !== question.answer);
+
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={[gameStyles.eyebrow, styles.eyebrow]}>🕵️ TENTATIVE DE VOL</Text>
-      <Text style={gameStyles.prompt}>{thiefName} tente de voler les points</Text>
-      <Text style={styles.risk}>
-        Réussite : +{level} points · Échec : −2 points
-      </Text>
-      <Text style={gameStyles.categoryDescription}>{question.question}</Text>
-      {remaining > 1 && <Text style={styles.remaining}>{remaining - 1} autre(s) candidat(s) ensuite</Text>}
+    <ScreenBody
+      center
+      bottom={
+        <>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Button label="Faux" icon="x" variant="danger" size="l" style={{ flex: 1 }} onPress={() => onJudge('incorrect')} />
+            <Button label="Juste" icon="check" variant="success" size="l" style={{ flex: 1 }} onPress={() => onJudge('correct')} />
+          </View>
+          <Button label="Ce candidat renonce" variant="ghost" onPress={onSkip} />
+        </>
+      }
+    >
+      <View style={{ alignItems: 'center', gap: 6 }}>
+        <T variant="caption" color={palette.primary} style={{ letterSpacing: 1 }}>
+          TENTATIVE DE VOL
+        </T>
+        <T variant="title" center color={thief.color}>
+          {thief.name} tente le vol
+        </T>
+        <T variant="body" color={palette.textMuted} center numeric>
+          Réussite +{level} pts · Échec −2 pts
+        </T>
+        {remaining > 1 && (
+          <T variant="caption" color={palette.textFaint}>
+            {remaining - 1} autre{remaining > 2 ? 's' : ''} candidat{remaining > 2 ? 's' : ''} ensuite
+          </T>
+        )}
+      </View>
+
+      <T variant="heading" center style={{ paddingVertical: 8 }}>
+        {question.question}
+      </T>
 
       {peek ? (
-        <Text style={styles.answer}>
-          {question.answer}
-          {question.acceptedAnswers.length > 1
-            ? ` (aussi : ${question.acceptedAnswers.filter((a) => a !== question.answer).join(', ')})`
-            : ''}
-        </Text>
+        <Card tone="soft" style={{ alignItems: 'center', gap: 4 }}>
+          <T variant="caption" color={palette.textMuted}>
+            Pour l’organisateur uniquement
+          </T>
+          <T variant="heading" color={palette.success} center>
+            {question.answer}
+          </T>
+          {others.length > 0 && (
+            <T variant="caption" color={palette.textMuted} center>
+              Aussi accepté : {others.join(', ')}
+            </T>
+          )}
+        </Card>
       ) : (
-        <Button label="👁 Organisateur : voir la réponse" variant="secondary" onPress={() => setPeek(true)} />
+        <Button label="Organisateur : voir la réponse" icon="eye" variant="secondary" onPress={() => setPeek(true)} />
       )}
-
-      <View style={gameStyles.judgeRow}>
-        <Button label="✅ Bonne réponse" variant="success" onPress={() => onJudge('correct')} />
-        <Button label="❌ Mauvaise réponse" variant="danger" onPress={() => onJudge('incorrect')} />
-      </View>
-      <Button label="⚖️ Accepter quand même" variant="secondary" onPress={() => onJudge('accepted-anyway')} />
-      <Button label="Ce candidat renonce" variant="ghost" onPress={onSkip} />
-    </View>
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  eyebrow: { color: colors.voleur },
-  risk: { color: colors.warning, fontSize: 14, fontWeight: '700' },
-  remaining: { color: colors.textMuted, fontSize: 13 },
-  answer: { color: colors.success, fontSize: 18, fontWeight: '800', textAlign: 'center', paddingHorizontal: 12 },
-});

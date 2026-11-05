@@ -1,13 +1,8 @@
-import { Player } from '@/types';
+import { ComponentProps } from 'react';
 import { FinalResults } from './FinalResults';
 
-type ChallengeFinalResultsProps = {
-  players: Player[];
-  winnerId: string | null;
-  commentary: string | null;
-  onReplay: () => void;
-};
+type Props = Omit<ComponentProps<typeof FinalResults>, 'isChallenge' | 'onStartChallenge'>;
 
-export function ChallengeFinalResults(props: ChallengeFinalResultsProps) {
+export function ChallengeFinalResults(props: Props) {
   return <FinalResults {...props} isChallenge />;
 }

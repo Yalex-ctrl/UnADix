@@ -1,21 +1,29 @@
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { colors } from '@/constants/theme';
+import { palette, radius, shadow } from '@/theme/tokens';
 
 type CardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   borderColor?: string;
+  tone?: 'default' | 'soft' | 'gold' | 'primary';
 };
 
-export function Card({ children, style, borderColor = colors.border }: CardProps) {
-  return <View style={[styles.card, { borderColor }, style]}>{children}</View>;
+const TONES = {
+  default: palette.surface,
+  soft: palette.surfaceAlt,
+  gold: palette.goldSoft,
+  primary: palette.primarySoft,
+} as const;
+
+export function Card({ children, style, borderColor = palette.border, tone = 'default' }: CardProps) {
+  return <View style={[styles.card, { borderColor, backgroundColor: TONES[tone] }, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radius.card,
     borderWidth: 1,
     padding: 16,
+    ...shadow.card,
   },
 });

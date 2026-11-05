@@ -1,32 +1,42 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { colors } from '@/constants/theme';
-import { gameStyles } from '../gameStyles';
+import { Card } from '@/components/ui/Card';
+import { ScreenBody } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 
 type ThiefRevealProps = {
-  question: { answer: string; acceptedAnswers: string[]; explanation: string };
+  question: { answer: string; acceptedAnswers: string[]; explanation: string; anecdote?: string };
   onContinue: () => void;
 };
 
-// Shown once every steal attempt is over: the answer is finally revealed
-// along with the educational explanation.
+// Affiché une fois toutes les tentatives de vol terminées : la réponse est
+// enfin révélée, avec l'explication.
 export function ThiefReveal({ question, onContinue }: ThiefRevealProps) {
+  const others = question.acceptedAnswers.filter((a) => a !== question.answer);
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={gameStyles.eyebrow}>LA RÉPONSE ÉTAIT</Text>
-      <Text style={styles.answer}>{question.answer}</Text>
-      {question.acceptedAnswers.length > 1 && (
-        <Text style={styles.accepted}>
-          Aussi accepté : {question.acceptedAnswers.filter((a) => a !== question.answer).join(', ')}
-        </Text>
+    <ScreenBody center bottom={<Button label="Continuer" size="l" onPress={onContinue} />}>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <T variant="caption" color={palette.textMuted} style={{ letterSpacing: 1 }}>
+          LA RÉPONSE ÉTAIT
+        </T>
+      </View>
+      <T variant="display" center color={palette.success}>
+        {question.answer}
+      </T>
+      {others.length > 0 && (
+        <T variant="caption" color={palette.textMuted} center>
+          Aussi accepté : {others.join(', ')}
+        </T>
       )}
-      <Text style={gameStyles.categoryDescription}>{question.explanation}</Text>
-      <Button label="Continuer" onPress={onContinue} />
-    </View>
+      <Card tone="soft" style={{ gap: 8 }}>
+        <T variant="body">{question.explanation}</T>
+        {question.anecdote ? (
+          <T variant="caption" color={palette.textMuted}>
+            {question.anecdote}
+          </T>
+        ) : null}
+      </Card>
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  answer: { color: colors.success, fontSize: 28, fontWeight: '800', textAlign: 'center' },
-  accepted: { color: colors.textMuted, fontSize: 14, textAlign: 'center', paddingHorizontal: 12 },
-});

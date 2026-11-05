@@ -1,10 +1,14 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { colors } from '@/constants/theme';
+import { Alert, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Header } from '@/components/ui/Header';
+import { Screen } from '@/components/ui/Screen';
+import { SectionTitle } from '@/components/ui/SectionTitle';
+import { T } from '@/components/ui/Typography';
 import { clearHistory, FinishedGame, loadHistory } from '@/lib/storage';
+import { palette } from '@/theme/tokens';
 
 type PlayerStats = {
   name: string;
@@ -27,7 +31,9 @@ function computeStats(history: FinishedGame[]): PlayerStats[] {
   for (const game of history) {
     for (const p of game.players) {
       const key = p.name.trim().toLowerCase();
-      const s = map.get(key) ?? { name: p.name, games: 0, wins: 0, points: 0, played: 0, correct: 0, bestStreak: 0, maxLevel: 0, levelSum: 0, levelCount: 0, steals: 0, jokers: 0, trophies: 0 };
+      const s =
+        map.get(key) ??
+        { name: p.name, games: 0, wins: 0, points: 0, played: 0, correct: 0, bestStreak: 0, maxLevel: 0, levelSum: 0, levelCount: 0, steals: 0, jokers: 0, trophies: 0 };
       s.games += 1;
       s.wins += p.name === game.winnerName ? 1 : 0;
       s.points += p.score;
@@ -47,6 +53,19 @@ function computeStats(history: FinishedGame[]): PlayerStats[] {
 }
 
 const pct = (a: number, b: number) => (b === 0 ? '–' : `${Math.round((a / b) * 100)} %`);
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ minWidth: '30%', flex: 1, gap: 2 }}>
+      <T variant="caption" color={palette.textMuted}>
+        {label}
+      </T>
+      <T variant="heading" numeric>
+        {value}
+      </T>
+    </View>
+  );
+}
 
 export default function StatsScreen() {
   const router = useRouter();
@@ -74,75 +93,62 @@ export default function StatsScreen() {
     ]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Statistiques</Text>
-
-        {history.length === 0 ? (
-          <Text style={styles.empty}>Aucune partie terminée pour le moment.</Text>
-        ) : (
-          <>
-            <Text style={styles.section}>Joueurs</Text>
-            {stats.map((s) => (
-              <View key={s.name} style={styles.card}>
-                <Text style={styles.cardTitle}>{s.name}</Text>
-                <Text style={styles.cardLine}>
-                  {s.games} partie{s.games > 1 ? 's' : ''} · {s.wins} victoire{s.wins > 1 ? 's' : ''} ({pct(s.wins, s.games)})
-                </Text>
-                <Text style={styles.cardLine}>
-                  {s.points} points · {pct(s.correct, s.played)} de bonnes réponses
-                </Text>
-                <Text style={styles.cardLine}>
-                  Niveau moyen choisi : {s.levelCount > 0 ? (s.levelSum / s.levelCount).toFixed(1) : '–'} · plus haut
-                  niveau réussi : {s.maxLevel || '–'}
-                </Text>
-                <Text style={styles.cardLine}>
-                  Meilleure série : {s.bestStreak} · vols réussis : {s.steals} · jokers utilisés : {s.jokers} · trophées :{' '}
-                  {s.trophies}
-                </Text>
+    <Screen
+      header={<Header title="Statistiques" onBack={() => router.back()} />}
+      gap={12}
+      bottom={history.length > 0 ? <Button label="Effacer l’historique" variant="danger" onPress={handleClear} /> : undefined}
+    >
+      {history.length === 0 ? (
+        <T variant="body" color={palette.textMuted} center style={{ marginVertical: 48 }}>
+          Aucune partie terminée pour le moment.
+        </T>
+      ) : (
+        <>
+          <SectionTitle>Joueurs</SectionTitle>
+          {stats.map((s) => (
+            <Card key={s.name} style={{ gap: 12 }}>
+              <T variant="heading">{s.name}</T>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <Stat label="Parties" value={String(s.games)} />
+                <Stat label="Victoires" value={`${s.wins} · ${pct(s.wins, s.games)}`} />
+                <Stat label="Points" value={String(s.points)} />
+                <Stat label="Réussite" value={pct(s.correct, s.played)} />
+                <Stat label="Niveau moyen" value={s.levelCount > 0 ? (s.levelSum / s.levelCount).toFixed(1) : '–'} />
+                <Stat label="Meilleur niveau" value={s.maxLevel ? String(s.maxLevel) : '–'} />
+                <Stat label="Meilleure série" value={String(s.bestStreak)} />
+                <Stat label="Vols réussis" value={String(s.steals)} />
+                <Stat label="Jokers utilisés" value={String(s.jokers)} />
               </View>
-            ))}
+              <T variant="caption" color={palette.textMuted}>
+                {s.trophies} trophée{s.trophies > 1 ? 's' : ''}
+              </T>
+            </Card>
+          ))}
 
-            <Text style={styles.section}>Historique</Text>
-            {history.map((g) => (
-              <View key={g.id} style={styles.card}>
-                <Text style={styles.cardTitle}>
-                  🏆 {g.winnerName} · {g.rounds} manches
-                </Text>
-                <Text style={styles.cardLine}>{new Date(g.date).toLocaleDateString('fr-FR')}</Text>
-                {g.themes?.length > 0 && <Text style={styles.cardLine}>Thèmes : {g.themes.join(', ')}</Text>}
-                <Text style={styles.cardLine}>
-                  {[...g.players]
-                    .sort((a, b) => b.score - a.score)
-                    .map((p) => `${p.name} ${p.score}`)
-                    .join(' · ')}
-                </Text>
-              </View>
-            ))}
-            <Button label="Effacer l'historique" variant="danger" onPress={handleClear} style={styles.clear} />
-          </>
-        )}
-
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} style={styles.clear} />
-      </ScrollView>
-    </SafeAreaView>
+          <SectionTitle>Historique</SectionTitle>
+          {history.map((g) => (
+            <Card key={g.id} style={{ gap: 4 }}>
+              <T variant="body" style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+                {g.winnerName} l’emporte · {g.rounds} manches
+              </T>
+              <T variant="caption" color={palette.textMuted}>
+                {new Date(g.date).toLocaleDateString('fr-FR')}
+              </T>
+              <T variant="caption" color={palette.textMuted} numeric>
+                {[...g.players]
+                  .sort((a, b) => b.score - a.score)
+                  .map((p) => `${p.name} ${p.score}`)
+                  .join(' · ')}
+              </T>
+              {g.themes?.length > 0 && (
+                <T variant="caption" color={palette.textFaint}>
+                  Thèmes : {g.themes.join(', ')}
+                </T>
+              )}
+            </Card>
+          ))}
+        </>
+      )}
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, gap: 10 },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', marginBottom: 8 },
-  empty: { color: colors.textMuted, fontSize: 15, marginVertical: 24, textAlign: 'center' },
-  section: { color: colors.textMuted, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginTop: 10 },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTitle: { color: colors.accent, fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  cardLine: { color: colors.textMuted, fontSize: 14, marginTop: 2 },
-  clear: { marginTop: 12 },
-});

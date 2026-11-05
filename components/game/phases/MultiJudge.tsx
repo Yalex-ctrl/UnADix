@@ -1,112 +1,119 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
-import { colors } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { ScreenBody } from '@/components/ui/Screen';
+import { SectionTitle } from '@/components/ui/SectionTitle';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 import { Question } from '@/types';
-import { gameStyles } from '../gameStyles';
 
 type MultiJudgeProps = {
-  eyebrow: string;
-  title?: string;
-  subtitle?: string;
-  accent?: string;
+  icon: React.ComponentProps<typeof Feather>['name'];
+  kicker: string; // « Question bonus », « Killer Question », « Duel All-In »
+  title: string;
+  rule: string; // règle en une phrase, affichée sur l'écran d'intro
+  gold?: boolean; // accent doré pour signaler l'événement
   question: Question | null;
   contenders: { id: string; name: string; color: string }[];
-  submitLabel: string;
   onSubmit: (correctIds: string[]) => void;
-  onCancel?: () => void;
 };
 
-// Shared screen for questions answered by several players at once (bonus,
-// killer, all-in): everybody answers in secret, the organiser reveals the
-// answer and ticks who got it right.
-export function MultiJudge({
-  eyebrow,
-  title,
-  subtitle,
-  accent = colors.auction,
-  question,
-  contenders,
-  submitLabel,
-  onSubmit,
-  onCancel,
-}: MultiJudgeProps) {
-  const [revealed, setRevealed] = useState(false);
+// Gabarit commun aux modes spéciaux (bonus, Killer Question, All-In) :
+// intro → question → révélation et choix de ceux qui ont trouvé.
+export function MultiJudge({ icon, kicker, title, rule, gold = true, question, contenders, onSubmit }: MultiJudgeProps) {
+  const [stage, setStage] = useState<'intro' | 'question' | 'judge'>('intro');
   const [correct, setCorrect] = useState<string[]>([]);
-  const toggle = (id: string) =>
-    setCorrect((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const accent = gold ? palette.gold : palette.primary;
+  const soft = gold ? palette.goldSoft : palette.primarySoft;
+  const toggle = (id: string) => setCorrect((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const submit = () => {
     onSubmit(correct);
-    setRevealed(false);
+    // Nouvelle question possible (égalité) : on repart de l'écran de question.
+    setStage('question');
     setCorrect([]);
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <Text style={[gameStyles.eyebrow, { color: accent }]}>{eyebrow}</Text>
-      {title && <Text style={styles.title}>{title}</Text>}
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+  if (stage === 'intro') {
+    return (
+      <ScreenBody center bottom={<Button label="C’est parti" size="l" onPress={() => setStage('question')} />}>
+        <View style={{ alignItems: 'center', gap: 12 }}>
+          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+            <Feather name={icon} size={32} color={accent} />
+          </View>
+          <T variant="caption" color={accent} style={{ letterSpacing: 1 }}>
+            {kicker.toUpperCase()}
+          </T>
+          <T variant="title" center>
+            {title}
+          </T>
+          <T variant="body" color={palette.textMuted} center>
+            {rule}
+          </T>
+        </View>
+      </ScreenBody>
+    );
+  }
 
-      {question ? (
-        <>
-          <Text style={styles.question}>{question.question}</Text>
-          {!revealed ? (
-            <>
-              <Text style={styles.hint}>
-                Chacun note sa réponse en secret (papier ou à voix basse), puis l’organisateur révèle.
-              </Text>
-              <Button label="Révéler la réponse" onPress={() => setRevealed(true)} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.answer}>{question.answer}</Text>
-              {question.acceptedAnswers.length > 1 && (
-                <Text style={styles.hint}>
-                  Aussi accepté : {question.acceptedAnswers.filter((a) => a !== question.answer).join(', ')}
-                </Text>
-              )}
-              <Text style={styles.hint}>{question.explanation}</Text>
-              <Text style={styles.sectionLabel}>Qui a trouvé ?</Text>
-              <View style={styles.list}>
-                {contenders.map((c) => {
-                  const on = correct.includes(c.id);
-                  return (
-                    <Pressable
-                      key={c.id}
-                      onPress={() => toggle(c.id)}
-                      style={[styles.chip, { borderColor: c.color }, on && { backgroundColor: c.color }]}
-                    >
-                      <Text style={[styles.chipText, on && { color: colors.background }]}>
-                        {on ? '✅ ' : ''}
-                        {c.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <Button label={submitLabel} onPress={submit} />
-            </>
-          )}
-        </>
+  if (!question) {
+    return (
+      <ScreenBody center bottom={<Button label="Continuer" size="l" onPress={() => onSubmit([])} />}>
+        <T variant="body" center color={palette.textMuted}>
+          Aucune question disponible.
+        </T>
+      </ScreenBody>
+    );
+  }
+
+  const others = question.acceptedAnswers.filter((a) => a !== question.answer);
+
+  return (
+    <ScreenBody
+      center={stage === 'question'}
+      bottom={
+        stage === 'question' ? (
+          <Button label="Révéler la réponse" size="l" onPress={() => setStage('judge')} />
+        ) : (
+          <Button label="Valider" size="l" onPress={submit} />
+        )
+      }
+    >
+      <T variant="caption" color={accent} center style={{ letterSpacing: 1 }}>
+        {kicker.toUpperCase()}
+      </T>
+      <T variant="title" center>
+        {question.question}
+      </T>
+      {stage === 'question' ? (
+        <T variant="caption" color={palette.textMuted} center>
+          Chacun note sa réponse en secret (papier ou à voix basse), puis l’organisateur révèle.
+        </T>
       ) : (
-        <Text style={styles.hint}>Aucune question disponible.</Text>
+        <>
+          <Card tone="soft" style={{ gap: 6, alignItems: 'center' }}>
+            <T variant="caption" color={palette.textMuted}>
+              Réponse attendue
+            </T>
+            <T variant="heading" color={palette.success} center>
+              {question.answer}
+            </T>
+            {others.length > 0 && (
+              <T variant="caption" color={palette.textMuted} center>
+                Aussi accepté : {others.join(', ')}
+              </T>
+            )}
+          </Card>
+          <SectionTitle>Qui a trouvé ?</SectionTitle>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {contenders.map((c) => (
+              <Chip key={c.id} label={c.name} color={c.color} selected={correct.includes(c.id)} onPress={() => toggle(c.id)} />
+            ))}
+          </View>
+        </>
       )}
-      {!question && <Button label={submitLabel} onPress={() => onSubmit([])} />}
-      {onCancel && <Button label="Annuler" variant="ghost" onPress={onCancel} />}
-    </ScrollView>
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { alignItems: 'center', gap: 12, paddingVertical: 24 },
-  title: { color: colors.text, fontSize: 26, fontWeight: '800', textAlign: 'center' },
-  subtitle: { color: colors.textMuted, fontSize: 15, textAlign: 'center' },
-  question: { color: colors.text, fontSize: 22, fontWeight: '700', textAlign: 'center', marginVertical: 8 },
-  hint: { color: colors.textMuted, fontSize: 14, textAlign: 'center', paddingHorizontal: 12 },
-  answer: { color: colors.success, fontSize: 28, fontWeight: '800', textAlign: 'center' },
-  sectionLabel: { color: colors.textMuted, fontSize: 13, fontWeight: '700', textTransform: 'uppercase' },
-  list: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  chip: { borderWidth: 2, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
-  chipText: { color: colors.text, fontSize: 15, fontWeight: '700' },
-});

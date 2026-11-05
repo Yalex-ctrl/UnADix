@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/constants/theme';
+import { Feather } from '@expo/vector-icons';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { Header } from '@/components/ui/Header';
+import { Screen } from '@/components/ui/Screen';
+import { SectionTitle } from '@/components/ui/SectionTitle';
+import { SwitchRow } from '@/components/ui/SwitchRow';
+import { T } from '@/components/ui/Typography';
 import { useGame } from '@/context/GameContext';
 import { loadHistory } from '@/lib/storage';
+import { fonts, palette, PLAYER_COLORS, radius } from '@/theme/tokens';
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 10;
+const PRESETS = [5, 10];
 
 export default function PlayersSetupScreen() {
   const router = useRouter();
@@ -26,244 +35,177 @@ export default function PlayersSetupScreen() {
     });
   }, []);
 
-  const addKnown = (name: string) => {
+  const trimmed = names.map((n) => n.trim());
+  const filled = trimmed.filter((n) => n.length > 0);
+  const lower = filled.map((n) => n.toLowerCase());
+  const duplicates = lower.length !== new Set(lower).size;
+  const canStart = filled.length >= MIN_PLAYERS && !duplicates;
+  const hint = filled.length < MIN_PLAYERS
+    ? `Il faut au moins ${MIN_PLAYERS} prénoms.`
+    : duplicates
+    ? 'Deux joueurs ont le même prénom.'
+    : null;
+
+  const addKnown = (name: string) =>
     setNames((prev) => {
       if (prev.some((n) => n.trim().toLowerCase() === name.toLowerCase())) return prev;
       const emptyIdx = prev.findIndex((n) => n.trim() === '');
       if (emptyIdx >= 0) return prev.map((n, i) => (i === emptyIdx ? name : n));
       return prev.length < MAX_PLAYERS ? [...prev, name] : prev;
     });
-  };
 
-  const updateName = (index: number, value: string) => {
-    setNames((prev) => prev.map((n, i) => (i === index ? value : n)));
-  };
-
-  const addPlayer = () => {
-    if (names.length >= MAX_PLAYERS) return;
-    setNames((prev) => [...prev, '']);
-  };
-
-  const removePlayer = (index: number) => {
-    if (names.length <= MIN_PLAYERS) return;
-    setNames((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleContinue = () => {
-    const trimmed = names.map((n) => n.trim()).filter((n) => n.length > 0);
-    if (trimmed.length < MIN_PLAYERS) {
-      Alert.alert('Pas assez de joueurs', `Il faut au moins ${MIN_PLAYERS} joueurs pour commencer.`);
-      return;
-    }
-    startGame(
-      trimmed.map((name) => ({ name })),
-      totalRounds,
-      'solo',
-      { thiefMode, tvHost }
-    );
+  const start = () => {
+    startGame(filled.map((name) => ({ name })), totalRounds, 'solo', { thiefMode, tvHost });
     router.push('/game');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Nouvelle partie</Text>
-        <Text style={styles.sectionLabel}>Joueurs ({names.length}/{MAX_PLAYERS})</Text>
-        {knownNames.length > 0 && (
-          <View style={styles.knownRow}>
-            {knownNames.map((n) => (
-              <Pressable key={n} style={styles.knownChip} onPress={() => addKnown(n)}>
-                <Text style={styles.knownChipText}>+ {n}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+    <Screen
+      header={<Header title="Nouvelle partie" onBack={() => router.back()} />}
+      gap={12}
+      bottom={
+        <>
+          {hint && (
+            <T variant="caption" color={palette.textMuted} center>
+              {hint}
+            </T>
+          )}
+          <Button label="Continuer" size="l" disabled={!canStart} onPress={start} />
+        </>
+      }
+    >
+      <SectionTitle>{`Joueurs (${names.length}/${MAX_PLAYERS})`}</SectionTitle>
 
-        {names.map((name, index) => (
-          <View key={index} style={styles.playerRow}>
-            <TextInput
-              style={styles.input}
-              placeholder={`Joueur ${index + 1}`}
-              placeholderTextColor={colors.textMuted}
-              value={name}
-              onChangeText={(v) => updateName(index, v)}
-              maxLength={20}
-            />
-            {names.length > MIN_PLAYERS && (
-              <Pressable onPress={() => removePlayer(index)} style={styles.removeButton}>
-                <Text style={styles.removeButtonText}>✕</Text>
-              </Pressable>
-            )}
-          </View>
-        ))}
+      {knownNames.length > 0 && (
+        <View style={styles.wrap}>
+          {knownNames.map((n) => (
+            <Chip key={n} label={n} onPress={() => addKnown(n)} />
+          ))}
+        </View>
+      )}
 
-        {names.length < MAX_PLAYERS && (
-          <Pressable style={styles.addButton} onPress={addPlayer}>
-            <Text style={styles.addButtonText}>+ Ajouter un joueur</Text>
-          </Pressable>
-        )}
+      {names.map((name, index) => (
+        <View key={index} style={styles.playerRow}>
+          <View style={[styles.dot, { backgroundColor: PLAYER_COLORS[index % PLAYER_COLORS.length] }]} />
+          <TextInput
+            style={styles.input}
+            placeholder={`Joueur ${index + 1}`}
+            placeholderTextColor={palette.textFaint}
+            value={name}
+            onChangeText={(v) => setNames((prev) => prev.map((n, i) => (i === index ? v : n)))}
+            maxLength={20}
+            accessibilityLabel={`Prénom du joueur ${index + 1}`}
+          />
+          {names.length > MIN_PLAYERS && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Retirer le joueur ${index + 1}`}
+              onPress={() => setNames((prev) => prev.filter((_, i) => i !== index))}
+              style={styles.remove}
+              hitSlop={6}
+            >
+              <Feather name="x" size={18} color={palette.textFaint} />
+            </Pressable>
+          )}
+        </View>
+      ))}
 
-        <Text style={styles.sectionLabel}>Format de la partie</Text>
-        <View style={styles.formatRow}>
+      {names.length < MAX_PLAYERS && (
+        <Pressable style={styles.add} onPress={() => setNames((prev) => [...prev, ''])} accessibilityRole="button">
+          <Feather name="plus" size={18} color={palette.textMuted} />
+          <T variant="body" color={palette.textMuted} style={{ fontFamily: fonts.semibold }}>
+            Ajouter un joueur
+          </T>
+        </Pressable>
+      )}
+
+      <SectionTitle>Durée</SectionTitle>
+      <Card style={{ gap: 12 }}>
+        <View style={styles.stepper}>
           <Pressable
-            style={[styles.formatCard, totalRounds === 5 && styles.formatCardSelected]}
-            onPress={() => setTotalRounds(5)}
+            accessibilityRole="button"
+            accessibilityLabel="Une manche de moins"
+            onPress={() => setTotalRounds((n) => Math.max(1, n - 1))}
+            style={styles.stepButton}
           >
-            <Text style={styles.formatTitle}>⚡ Partie rapide</Text>
-            <Text style={styles.formatSubtitle}>5 manches</Text>
+            <Feather name="minus" size={22} color={palette.text} />
           </Pressable>
+          <View style={{ alignItems: 'center', minWidth: 90 }}>
+            <T variant="display" numeric>
+              {totalRounds}
+            </T>
+            <T variant="caption" color={palette.textMuted}>
+              manche{totalRounds > 1 ? 's' : ''}
+            </T>
+          </View>
           <Pressable
-            style={[styles.formatCard, totalRounds === 10 && styles.formatCardSelected]}
-            onPress={() => setTotalRounds(10)}
+            accessibilityRole="button"
+            accessibilityLabel="Une manche de plus"
+            onPress={() => setTotalRounds((n) => Math.min(10, n + 1))}
+            style={styles.stepButton}
           >
-            <Text style={styles.formatTitle}>🏆 Partie longue</Text>
-            <Text style={styles.formatSubtitle}>10 manches</Text>
+            <Feather name="plus" size={22} color={palette.text} />
           </Pressable>
         </View>
-
-        <View style={styles.stepperRow}>
-          <Text style={styles.stepperLabel}>Manches : {totalRounds}</Text>
-          <Pressable style={styles.stepperButton} onPress={() => setTotalRounds((n) => Math.max(1, n - 1))}>
-            <Text style={styles.stepperButtonText}>−</Text>
-          </Pressable>
-          <Pressable style={styles.stepperButton} onPress={() => setTotalRounds((n) => Math.min(10, n + 1))}>
-            <Text style={styles.stepperButtonText}>+</Text>
-          </Pressable>
+        <View style={[styles.wrap, { justifyContent: 'center' }]}>
+          {PRESETS.map((n) => (
+            <Chip key={n} label={n === 5 ? 'Rapide · 5' : 'Classique · 10'} selected={totalRounds === n} onPress={() => setTotalRounds(n)} />
+          ))}
         </View>
+      </Card>
 
-        <Text style={styles.sectionLabel}>Options</Text>
-        <Pressable style={styles.optionRow} onPress={() => setThiefMode((v) => !v)}>
-          <Text style={styles.optionText}>🕵️ Mode Voleur (vol après une mauvaise réponse)</Text>
-          <Text style={styles.optionState}>{thiefMode ? 'Activé' : 'Désactivé'}</Text>
-        </Pressable>
-        <Pressable style={styles.optionRow} onPress={() => setTvHost((v) => !v)}>
-          <Text style={styles.optionText}>🎙️ Présentateur TV</Text>
-          <Text style={styles.optionState}>{tvHost ? 'Activé' : 'Désactivé'}</Text>
-        </Pressable>
-      </ScrollView>
-
-      <Pressable style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueButtonText}>Continuer</Text>
-      </Pressable>
-    </SafeAreaView>
+      <SectionTitle>Options</SectionTitle>
+      <SwitchRow
+        title="Mode Voleur"
+        description="Après une mauvaise réponse, les autres peuvent tenter de voler les points (−2 s’ils se trompent)."
+        value={thiefMode}
+        onValueChange={setThiefMode}
+      />
+      <SwitchRow
+        title="Présentateur TV"
+        description="Un commentaire dynamique à la fin de chaque manche."
+        value={tvHost}
+        onValueChange={setTvHost}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  knownRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  knownChip: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  knownChipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
-  stepperLabel: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '700' },
-  stepperButton: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  stepperButtonText: { color: colors.text, fontSize: 22, fontWeight: '700' },
-  optionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
-  optionText: { color: colors.text, fontSize: 14, flex: 1, paddingRight: 8 },
-  optionState: { color: colors.primary, fontWeight: '800', fontSize: 13 },
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: 20,
-  },
-  scrollContent: {
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  playerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
-  },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  playerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dot: { width: 14, height: 14, borderRadius: 7 },
   input: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: colors.text,
-    fontSize: 16,
+    minHeight: 52,
+    backgroundColor: palette.surface,
+    borderRadius: radius.button,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: palette.border,
+    paddingHorizontal: 16,
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    color: palette.text,
   },
-  removeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceAlt,
+  remove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  add: {
+    minHeight: 52,
+    borderRadius: radius.button,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: palette.border,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  removeButtonText: {
-    color: colors.danger,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  addButton: {
-    marginTop: 4,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  formatRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
-  formatCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 12,
+  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20 },
+  stepButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: palette.surfaceAlt,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  formatCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceAlt,
-  },
-  formatTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  formatSubtitle: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginTop: 4,
-  },
-  continueButton: {
-    marginVertical: 16,
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  continueButtonText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
+    justifyContent: 'center',
   },
 });

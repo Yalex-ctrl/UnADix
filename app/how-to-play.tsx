@@ -1,102 +1,59 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { Header } from '@/components/ui/Header';
+import { Screen } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 
 const RULES = [
   {
     title: '1. Le principe',
-    body: "Un seul téléphone sert de présentateur. À chaque manche, une catégorie est annoncée et chaque joueur choisit un niveau de difficulté de 1 à 10.",
+    body: 'Un seul téléphone sert de présentateur. À chaque manche, un thème est annoncé et chaque joueur choisit un niveau de difficulté de 1 à 10.',
   },
   {
     title: '2. La difficulté paye',
-    body: "Plus le niveau choisi est élevé, plus la question est difficile... et plus elle rapporte de points. Une question de niveau 7 rapporte 7 points.",
+    body: 'Plus le niveau choisi est élevé, plus la question est difficile… et plus elle rapporte : une bonne réponse au niveau 7 vaut 7 points.',
   },
   {
     title: '3. Un niveau par joueur',
-    body: "Deux joueurs ne peuvent pas choisir le même niveau pendant une même manche. L'ordre de choix change à chaque manche pour rester équitable.",
+    body: 'Deux joueurs ne peuvent pas prendre le même niveau dans une manche. L’ordre de choix change à chaque manche.',
   },
   {
     title: '4. Validation à voix haute',
-    body: "Le joueur répond à voix haute. Le maître du jeu affiche ensuite la réponse et juge lui-même : bonne réponse, mauvaise réponse, ou accepter quand même si la réponse était proche.",
+    body: 'Le joueur répond à voix haute. L’organisateur affiche la réponse, puis valide : juste, faux, ou « accepter quand même » si la réponse était proche.',
   },
   {
-    title: '5. Mode Voleur',
-    body: "Si activé, une mauvaise réponse permet aux autres joueurs de tenter de voler les points de la question.",
+    title: '5. Le joker',
+    body: 'Chaque joueur a un joker par partie : il remplace sa question par une autre du même thème et du même niveau.',
   },
   {
-    title: '6. La partie',
-    body: "La partie se joue en 10 manches, chacune avec une nouvelle catégorie. Le joueur avec le plus de points à la fin remporte la partie.",
+    title: '6. Mode Voleur',
+    body: 'Après une mauvaise réponse, les autres peuvent tenter de voler les points : +niveau s’ils trouvent, −2 points s’ils se trompent. La réponse n’est révélée qu’à la fin des tentatives.',
+  },
+  {
+    title: '7. Bonus, All-In et Killer Question',
+    body: 'Après les manches 3, 6 et 9, une question bonus vaut 10 points. Un duel All-In permet de miser tous ses points. En cas d’égalité, une Killer Question départage.',
+  },
+  {
+    title: '8. Mode Challenger',
+    body: 'À la fin de la partie, prolongez de 1 à 5 manches : chacun choisit son thème et le niveau (5 à 10) est tiré au sort.',
   },
 ];
 
 export default function HowToPlayScreen() {
   const router = useRouter();
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Comment jouer ?</Text>
-        {RULES.map((rule) => (
-          <View key={rule.title} style={styles.card}>
-            <Text style={styles.cardTitle}>{rule.title}</Text>
-            <Text style={styles.cardBody}>{rule.body}</Text>
-          </View>
-        ))}
-      </ScrollView>
-      <Pressable style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>Retour</Text>
-      </Pressable>
-    </SafeAreaView>
+    <Screen header={<Header title="Comment jouer ?" onBack={() => router.back()} />} gap={12}>
+      {RULES.map((rule) => (
+        <Card key={rule.title} style={{ gap: 6 }}>
+          <T variant="body" color={palette.primary} style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+            {rule.title}
+          </T>
+          <T variant="body" color={palette.textMuted}>
+            {rule.body}
+          </T>
+        </Card>
+      ))}
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: 20,
-  },
-  scrollContent: {
-    paddingTop: 16,
-    paddingBottom: 24,
-    gap: 14,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTitle: {
-    color: colors.accent,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  cardBody: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  backButton: {
-    marginVertical: 16,
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  backButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

@@ -1,65 +1,31 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, levelColor } from '@/constants/theme';
-import { gameStyles } from '../gameStyles';
+import { View } from 'react-native';
+import { LevelGrid } from '@/components/ui/LevelGrid';
+import { ScreenBody } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 
 type LevelSelectProps = {
-  playerName: string;
-  takenLevels: number[];
+  player: { name: string; color: string };
+  // Niveau -> joueur qui l'a pris dans cette manche.
+  takenBy: Record<number, { name: string; color: string }>;
   onChoose: (level: number) => void;
 };
 
-export function LevelSelect({ playerName, takenLevels, onChoose }: LevelSelectProps) {
-  const levels = Array.from({ length: 10 }, (_, i) => i + 1);
+export function LevelSelect({ player, takenBy, onChoose }: LevelSelectProps) {
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={gameStyles.prompt}>À toi de choisir, {playerName}.</Text>
-      <Text style={gameStyles.promptSub}>Quel niveau veux-tu ?</Text>
-      <View style={styles.grid}>
-        {levels.map((level) => {
-          const taken = takenLevels.includes(level);
-          return (
-            <Pressable
-              key={level}
-              disabled={taken}
-              style={[styles.button, { borderColor: levelColor(level) }, taken && styles.taken]}
-              onPress={() => onChoose(level)}
-            >
-              <Text style={[styles.buttonText, taken && styles.buttonTextTaken]}>{level}</Text>
-            </Pressable>
-          );
-        })}
+    <ScreenBody gap={24}>
+      <View style={{ gap: 4, alignItems: 'center' }}>
+        <T variant="caption" color={palette.textMuted} style={{ letterSpacing: 1 }}>
+          CHOIX DU NIVEAU
+        </T>
+        <T variant="title" center color={player.color}>
+          À toi, {player.name}
+        </T>
+        <T variant="body" color={palette.textMuted} center>
+          Quel niveau choisis-tu ?
+        </T>
       </View>
-    </View>
+      <LevelGrid takenBy={takenBy} onChoose={onChoose} />
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 10,
-    marginTop: 16,
-    paddingHorizontal: 8,
-  },
-  button: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-  taken: {
-    opacity: 0.25,
-  },
-  buttonText: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  buttonTextTaken: {
-    color: colors.textMuted,
-  },
-});

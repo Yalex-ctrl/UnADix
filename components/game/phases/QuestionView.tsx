@@ -1,20 +1,21 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 import { Badge } from '@/components/ui/Badge';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
-import { colors, levelColor } from '@/constants/theme';
-import { ConnectionMode } from '@/types';
-import { BraquageButton } from '../BraquageButton';
-import { gameStyles } from '../gameStyles';
+import { Chip } from '@/components/ui/Chip';
+import { ScreenBody } from '@/components/ui/Screen';
+import { T } from '@/components/ui/Typography';
+import { palette } from '@/theme/tokens';
 
 type QuestionViewProps = {
   categoryName: string;
   level: number;
-  playerName: string;
+  player: { name: string; color: string };
   questionText: string;
   braquage?: { braqueurName: string; victimName: string } | null;
   isAuction: boolean;
-  eligibleBraqueurs: { id: string; name: string }[];
-  connectionMode: ConnectionMode;
+  eligibleBraqueurs: { id: string; name: string; color: string }[];
   jokerAvailable?: boolean;
   onJoker?: () => void;
   onReport?: () => void;
@@ -25,85 +26,90 @@ type QuestionViewProps = {
 export function QuestionView({
   categoryName,
   level,
-  playerName,
+  player,
   questionText,
   braquage,
   isAuction,
   eligibleBraqueurs,
-  connectionMode,
   jokerAvailable,
   onJoker,
   onReport,
   onReveal,
   onBraquage,
 }: QuestionViewProps) {
+  const [sheet, setSheet] = useState(false);
+  const canBraquer = !braquage && !isAuction && eligibleBraqueurs.length > 0;
+
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={gameStyles.eyebrow}>{categoryName.toUpperCase()}</Text>
-      <View style={gameStyles.levelBadgeWrap}>
-        <Badge label={`Niveau ${level} · ${level} pts`} color={levelColor(level)} />
+    <ScreenBody
+      center
+      gap={20}
+      bottom={
+        <>
+          <Button label="Voir la réponse" size="l" onPress={onReveal} />
+          {!braquage && !isAuction && (
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
+              {onJoker && (
+                <Button
+                  label={jokerAvailable ? 'Joker' : 'Joker utilisé'}
+                  icon="refresh-cw"
+                  variant="ghost"
+                  disabled={!jokerAvailable}
+                  onPress={onJoker}
+                />
+              )}
+              {canBraquer && <Button label="Braquage" icon="crosshair" variant="ghost" onPress={() => setSheet(true)} />}
+              {onReport && <Button label="Signaler" icon="flag" variant="ghost" onPress={onReport} />}
+            </View>
+          )}
+          {isAuction && onReport && (
+            <Button label="Signaler" icon="flag" variant="ghost" onPress={onReport} />
+          )}
+        </>
+      }
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <T variant="caption" color={palette.textMuted}>
+          {categoryName} · Niveau {level}
+        </T>
+        <Badge label={`${level} pts`} color={palette.goldSoft} textColor={palette.gold} />
       </View>
 
       {braquage ? (
-        <View style={styles.braquageBanner}>
-          <Text style={styles.braquageBannerText}>
-            🔴 {braquage.braqueurName} BRAQUE {braquage.victimName} !
-          </Text>
+        <View style={{ alignItems: 'center' }}>
+          <Badge label={`${braquage.braqueurName} braque ${braquage.victimName}`} color={palette.dangerSoft} textColor={palette.danger} />
         </View>
       ) : (
-        <Text style={styles.playerLabel}>AU TOUR DE {playerName.toUpperCase()}</Text>
+        <T variant="heading" center color={player.color}>
+          Au tour de {player.name}
+        </T>
       )}
 
-      <Text style={styles.question}>{questionText}</Text>
-      <Button label="Voir la réponse" onPress={onReveal} />
+      <T variant="title" center style={{ paddingVertical: 8 }}>
+        {questionText}
+      </T>
 
-      {!braquage && !isAuction && onJoker && (
-        <Button
-          label={jokerAvailable ? '🎟️ Utiliser mon joker' : '🎟️ Joker déjà utilisé'}
-          variant="secondary"
-          disabled={!jokerAvailable}
-          onPress={onJoker}
-        />
-      )}
-
-      {!braquage && !isAuction && (
-        <BraquageButton eligiblePlayers={eligibleBraqueurs} connectionMode={connectionMode} onBraquage={onBraquage} />
-      )}
-
-      {onReport && <Button label="🚩 Signaler / remplacer la question" variant="ghost" onPress={onReport} />}
-    </View>
+      <BottomSheet
+        visible={sheet}
+        title={`Qui braque ${player.name} ?`}
+        subtitle="Le braqueur répond à sa place. Un seul braquage par joueur."
+        onClose={() => setSheet(false)}
+      >
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {eligibleBraqueurs.map((p) => (
+            <Chip
+              key={p.id}
+              label={p.name}
+              color={p.color}
+              onPress={() => {
+                setSheet(false);
+                onBraquage(p.id);
+              }}
+            />
+          ))}
+        </View>
+        <Button label="Retour" variant="ghost" onPress={() => setSheet(false)} />
+      </BottomSheet>
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  playerLabel: {
-    color: colors.textMuted,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginTop: 6,
-  },
-  question: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginVertical: 14,
-    paddingHorizontal: 8,
-    lineHeight: 32,
-  },
-  braquageBanner: {
-    marginTop: 6,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1.5,
-    borderColor: colors.braquage,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  braquageBannerText: {
-    color: colors.braquage,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-});

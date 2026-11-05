@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { colors } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { ScreenBody } from '@/components/ui/Screen';
+import { SectionTitle } from '@/components/ui/SectionTitle';
+import { SwitchRow } from '@/components/ui/SwitchRow';
+import { T } from '@/components/ui/Typography';
+import { allInTargetsFor, validAllInChallengers } from '@/lib/gameReducer';
+import { palette } from '@/theme/tokens';
 import { Player } from '@/types';
-import { gameStyles } from '../gameStyles';
 
 type AllInSetupProps = {
   players: Player[];
@@ -16,87 +22,93 @@ export function AllInSetup({ players, onStart, onCancel }: AllInSetupProps) {
   const [targetId, setTargetId] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
 
+  // Seuls les challengers pour lesquels un duel est possible sont proposés.
+  const challengers = validAllInChallengers(players);
   const challenger = players.find((p) => p.id === challengerId);
-  const targets = challenger ? players.filter((p) => p.id !== challenger.id && p.score >= challenger.score) : [];
-  const target = players.find((p) => p.id === targetId);
+  const targets = challengerId ? allInTargetsFor(players, challengerId) : [];
+  const target = targets.find((p) => p.id === targetId);
 
   return (
-    <View style={gameStyles.centerContent}>
-      <Text style={[gameStyles.eyebrow, { color: colors.auction }]}>🎲 DUEL ALL-IN</Text>
-      <Text style={styles.rule}>
-        Le challenger mise la totalité de ses points. Le joueur défié doit en avoir au moins autant. Le gagnant
-        récupère la mise. Aucun joker, pas de vol.
-      </Text>
+    <ScreenBody
+      bottom={
+        <>
+          <Button
+            label="Lancer le duel"
+            icon="zap"
+            size="l"
+            disabled={!challenger || !target || !accepted}
+            onPress={() => challenger && target && onStart(challenger.id, target.id)}
+          />
+          <Button label="Retour" variant="ghost" onPress={onCancel} />
+        </>
+      }
+    >
+      <View style={{ gap: 4 }}>
+        <T variant="caption" color={palette.gold} style={{ letterSpacing: 1 }}>
+          DUEL ALL-IN
+        </T>
+        <T variant="title">Tout ou rien</T>
+        <T variant="body" color={palette.textMuted}>
+          Le challenger mise tous ses points. Le joueur défié doit en avoir au moins autant. Même question pour les deux :
+          le gagnant ramasse la mise. Pas de joker, pas de vol.
+        </T>
+      </View>
 
-      <Text style={styles.label}>Qui lance le défi ?</Text>
-      <View style={styles.list}>
-        {players
-          .filter((p) => p.score > 0)
-          .map((p) => (
-            <Pressable
-              key={p.id}
-              onPress={() => {
-                setChallengerId(p.id);
-                setTargetId(null);
-                setAccepted(false);
-              }}
-              style={[styles.chip, challengerId === p.id && styles.chipOn]}
-            >
-              <Text style={styles.chipText}>
-                {p.name} ({p.score})
-              </Text>
-            </Pressable>
-          ))}
+      <SectionTitle>Qui lance le défi ?</SectionTitle>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {challengers.map((p) => (
+          <Chip
+            key={p.id}
+            label={`${p.name} · ${p.score}`}
+            color={p.color}
+            selected={challengerId === p.id}
+            onPress={() => {
+              setChallengerId(p.id);
+              setTargetId(null);
+              setAccepted(false);
+            }}
+          />
+        ))}
       </View>
 
       {challenger && (
         <>
-          <Text style={styles.label}>Qui est défié ?</Text>
-          {targets.length === 0 ? (
-            <Text style={styles.rule}>Personne n’a assez de points pour accepter cette mise.</Text>
-          ) : (
-            <View style={styles.list}>
-              {targets.map((p) => (
-                <Pressable
-                  key={p.id}
-                  onPress={() => {
-                    setTargetId(p.id);
-                    setAccepted(false);
-                  }}
-                  style={[styles.chip, targetId === p.id && styles.chipOn]}
-                >
-                  <Text style={styles.chipText}>
-                    {p.name} ({p.score})
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
+          <SectionTitle>Qui est défié ?</SectionTitle>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {targets.map((p) => (
+              <Chip
+                key={p.id}
+                label={`${p.name} · ${p.score}`}
+                color={p.color}
+                selected={targetId === p.id}
+                onPress={() => {
+                  setTargetId(p.id);
+                  setAccepted(false);
+                }}
+              />
+            ))}
+          </View>
         </>
       )}
 
       {challenger && target && (
         <>
-          <Text style={styles.stake}>MISE : {challenger.score} POINTS</Text>
-          <Pressable onPress={() => setAccepted((v) => !v)} style={[styles.chip, accepted && styles.chipOn]}>
-            <Text style={styles.chipText}>
-              {accepted ? '✅' : '⬜'} {challenger.name} et {target.name} acceptent
-            </Text>
-          </Pressable>
-          <Button label="Lancer le duel" variant="auction" disabled={!accepted} onPress={() => onStart(challenger.id, target.id)} />
+          <Card tone="gold" borderColor={palette.gold} style={{ alignItems: 'center' }}>
+            <T variant="caption" color={palette.gold}>
+              MISE
+            </T>
+            <T variant="display" color={palette.gold} numeric>
+              {challenger.score} pts
+            </T>
+          </Card>
+          <SwitchRow
+            title="Les deux joueurs acceptent"
+            description={`${challenger.name} et ${target.name} confirment le duel.`}
+            value={accepted}
+            onValueChange={setAccepted}
+          />
         </>
       )}
-      <Button label="Annuler" variant="ghost" onPress={onCancel} />
-    </View>
+    </ScreenBody>
   );
 }
-
-const styles = StyleSheet.create({
-  rule: { color: colors.textMuted, fontSize: 14, textAlign: 'center', paddingHorizontal: 12 },
-  label: { color: colors.textMuted, fontSize: 13, fontWeight: '700', textTransform: 'uppercase' },
-  list: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  chip: { borderWidth: 2, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
-  chipOn: { borderColor: colors.auction, backgroundColor: colors.surfaceAlt },
-  chipText: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  stake: { color: colors.auction, fontSize: 22, fontWeight: '800' },
-});

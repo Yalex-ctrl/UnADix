@@ -60,6 +60,7 @@ export function initialState(): GameState {
     commentary: null,
     usedCommentaryIds: [],
     lastRanks: {},
+    rankDeltas: {},
     lastSteal: null,
     prevState: null,
   };
@@ -205,6 +206,9 @@ function goToSummary(state: GameState): GameState {
     state.roundAttemptIds,
     state.lastRanks
   );
+  const newRanks = rankOf(players);
+  const rankDeltas: Record<string, number> = {};
+  for (const p of players) rankDeltas[p.id] = (state.lastRanks[p.id] ?? newRanks[p.id]) - newRanks[p.id];
   const comment = state.tvHost
     ? buildCommentary({
         players,
@@ -226,7 +230,8 @@ function goToSummary(state: GameState): GameState {
     auctionLevel: null,
     commentary: comment?.text ?? null,
     usedCommentaryIds: comment ? [...state.usedCommentaryIds, comment.id].slice(-3) : state.usedCommentaryIds,
-    lastRanks: rankOf(players),
+    lastRanks: newRanks,
+    rankDeltas,
   };
 }
 
@@ -770,5 +775,6 @@ export function migrateState(raw: unknown): GameState | null {
   }
   if (typeof (src as { thiefModeEnabled?: unknown }).thiefModeEnabled !== 'boolean') migrated.thiefModeEnabled = true;
   if (!Array.isArray(migrated.roundAttemptIds)) migrated.roundAttemptIds = [];
+  if (!migrated.rankDeltas || typeof migrated.rankDeltas !== 'object') migrated.rankDeltas = {};
   return migrated;
 }

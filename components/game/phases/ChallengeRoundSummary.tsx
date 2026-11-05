@@ -1,16 +1,8 @@
-import { Player, TrophyEvent } from '@/types';
+import { ComponentProps } from 'react';
 import { RoundSummary } from './RoundSummary';
 
-type ChallengeRoundSummaryProps = {
-  players: Player[];
-  commentary: string | null;
-  newTrophies: TrophyEvent[];
-  isLastRound: boolean;
-  onNext: () => void;
-  onAllIn: () => void;
-  onRemovePlayer: (id: string) => void;
-};
+type Props = Omit<ComponentProps<typeof RoundSummary>, 'isChallenge'>;
 
-export function ChallengeRoundSummary(props: ChallengeRoundSummaryProps) {
+export function ChallengeRoundSummary(props: Props) {
   return <RoundSummary {...props} isChallenge />;
 }

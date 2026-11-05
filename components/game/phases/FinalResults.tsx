@@ -1,111 +1,170 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { colors } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { ScreenBody } from '@/components/ui/Screen';
+import { SectionTitle } from '@/components/ui/SectionTitle';
+import { T } from '@/components/ui/Typography';
 import { TROPHIES } from '@/lib/trophies';
+import { palette, radius, shadow } from '@/theme/tokens';
 import { Player } from '@/types';
 import { Leaderboard } from '../Leaderboard';
-import { gameStyles } from '../gameStyles';
 
 type FinalResultsProps = {
   players: Player[];
   winnerId: string | null;
-  commentary: string | null;
   isChallenge?: boolean;
   onReplay: () => void;
+  onHome: () => void;
   onStartChallenge?: (rounds: number) => void;
 };
 
-export function FinalResults({ players, winnerId, commentary, isChallenge, onReplay, onStartChallenge }: FinalResultsProps) {
-  const [challengeRounds, setChallengeRounds] = useState(5);
-  const sorted = [...players].sort((a, b) => b.score - a.score);
-  const winner = players.find((p) => p.id === winnerId) ?? sorted[0];
-
+function Tile({ label, value }: { label: string; value: string }) {
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <Text style={gameStyles.eyebrow}>{isChallenge ? 'DÉFI TERMINÉ' : 'FIN DE PARTIE !'}</Text>
-      <Text style={gameStyles.winnerText}>🏆 {winner?.name}</Text>
-      <Text style={styles.winnerScore}>{winner?.score} points</Text>
-      {commentary && <Text style={styles.commentary}>« {commentary} »</Text>}
-
-      <Leaderboard players={players} />
-
-      <Text style={styles.sectionLabel}>Statistiques finales</Text>
-      {sorted.map((p) => (
-        <View key={p.id} style={styles.card}>
-          <Text style={styles.cardTitle}>{p.name}</Text>
-          <Text style={styles.cardLine}>
-            {p.correct}/{p.played} bonnes réponses ({p.played > 0 ? Math.round((p.correct / p.played) * 100) : 0} %)
-          </Text>
-          <Text style={styles.cardLine}>
-            Niveau moyen choisi : {p.levelCount > 0 ? (p.levelSum / p.levelCount).toFixed(1) : '–'} · plus haut niveau
-            réussi : {p.maxLevelWon || '–'}
-          </Text>
-          <Text style={styles.cardLine}>
-            Vols réussis : {p.stealWins}/{p.stealAttempts} · meilleure série : {p.bestStreak}
-          </Text>
-          {p.trophies.length > 0 && (
-            <Text style={styles.trophies}>
-              {p.trophies.map((t) => `${TROPHIES[t]?.emoji ?? ''} ${TROPHIES[t]?.name ?? t}`).join('  ·  ')}
-            </Text>
-          )}
-        </View>
-      ))}
-
-      <Button label="Rejouer" onPress={onReplay} />
-
-      {onStartChallenge && (
-        <View style={styles.challengeCard}>
-          <Text style={styles.challengeCardTitle}>🔥 Mode Challenger</Text>
-          <Text style={styles.challengeCardBody}>
-            Prolongez la partie : chaque joueur choisit son propre thème, le niveau (5 à 10) est tiré au sort et
-            identique pour tous. Les scores continuent et les jokers non utilisés restent disponibles.
-          </Text>
-          <View style={styles.stepper}>
-            <Button label="−" variant="secondary" onPress={() => setChallengeRounds((n) => Math.max(1, n - 1))} />
-            <Text style={styles.stepperValue}>{challengeRounds} manche(s)</Text>
-            <Button label="+" variant="secondary" onPress={() => setChallengeRounds((n) => Math.min(5, n + 1))} />
-          </View>
-          <Button
-            label="Activer le mode Challenger"
-            variant="auction"
-            onPress={() => onStartChallenge(challengeRounds)}
-            style={styles.challengeButton}
-          />
-        </View>
-      )}
-    </ScrollView>
+    <View style={{ flex: 1, minWidth: '30%', backgroundColor: palette.surface, borderRadius: radius.button, padding: 12, ...shadow.card }}>
+      <T variant="caption" color={palette.textMuted}>
+        {label}
+      </T>
+      <T variant="heading" numeric>
+        {value}
+      </T>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { alignItems: 'center', gap: 10, paddingVertical: 20 },
-  winnerScore: { color: colors.textMuted, fontSize: 16, fontWeight: '700' },
-  commentary: { color: colors.text, fontSize: 16, fontStyle: 'italic', textAlign: 'center', paddingHorizontal: 12 },
-  sectionLabel: { color: colors.textMuted, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', alignSelf: 'flex-start' },
-  card: {
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTitle: { color: colors.accent, fontSize: 16, fontWeight: '800' },
-  cardLine: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
-  trophies: { color: colors.text, fontSize: 13, marginTop: 6 },
-  challengeCard: {
-    marginTop: 16,
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  challengeCardTitle: { color: colors.auction, fontSize: 17, fontWeight: '800' },
-  challengeCardBody: { color: colors.textMuted, fontSize: 14, marginTop: 6, lineHeight: 20 },
-  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 12 },
-  stepperValue: { color: colors.text, fontSize: 16, fontWeight: '700' },
-  challengeButton: { marginTop: 14 },
-});
+export function FinalResults({ players, winnerId, isChallenge, onReplay, onHome, onStartChallenge }: FinalResultsProps) {
+  const [challengeRounds, setChallengeRounds] = useState(5);
+  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const winner = players.find((p) => p.id === winnerId) ?? sorted[0];
+  const podium = [sorted[1], sorted[0], sorted[2]].filter(Boolean) as Player[];
+  const heights: Record<number, number> = { 0: 96, 1: 72, 2: 56 };
+
+  const totalPlayed = players.reduce((n, p) => n + p.played, 0);
+  const totalCorrect = players.reduce((n, p) => n + p.correct, 0);
+  const levelCount = players.reduce((n, p) => n + p.levelCount, 0);
+  const levelSum = players.reduce((n, p) => n + p.levelSum, 0);
+  const steals = players.reduce((n, p) => n + p.stealWins, 0);
+  const trophies = players.flatMap((p) => p.trophies.map((t) => ({ player: p, id: t })));
+
+  return (
+    <ScreenBody
+      gap={16}
+      bottom={
+        <>
+          <Button label="Rejouer avec les mêmes joueurs" size="l" onPress={onReplay} />
+          <Button label="Accueil" variant="ghost" onPress={onHome} />
+        </>
+      }
+    >
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <T variant="caption" color={palette.gold} style={{ letterSpacing: 1 }}>
+          {isChallenge ? 'DÉFI TERMINÉ' : 'FIN DE PARTIE'}
+        </T>
+        <T variant="display" center>
+          {winner?.name}
+        </T>
+        <T variant="heading" color={palette.gold} numeric>
+          {winner?.score} points
+        </T>
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8 }}>
+        {podium.map((p) => {
+          const rank = sorted.indexOf(p);
+          return (
+            <View key={p.id} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+              <T variant="body" style={{ fontFamily: 'PlusJakartaSans_700Bold' }} numberOfLines={1}>
+                {p.name}
+              </T>
+              <View
+                style={{
+                  width: '100%',
+                  height: heights[rank],
+                  backgroundColor: rank === 0 ? palette.goldSoft : palette.surfaceAlt,
+                  borderTopLeftRadius: 12,
+                  borderTopRightRadius: 12,
+                  borderBottomWidth: 4,
+                  borderBottomColor: p.color,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <T variant="title" numeric color={rank === 0 ? palette.gold : palette.textMuted}>
+                  {rank + 1}
+                </T>
+              </View>
+              <T variant="caption" color={palette.textMuted} numeric>
+                {p.score} pts
+              </T>
+            </View>
+          );
+        })}
+      </View>
+
+      {sorted.length > 3 && <Leaderboard players={sorted.slice(3)} />}
+
+      <SectionTitle>Statistiques</SectionTitle>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <Tile label="Réussite" value={totalPlayed > 0 ? `${Math.round((totalCorrect / totalPlayed) * 100)} %` : '–'} />
+        <Tile label="Niveau moyen choisi" value={levelCount > 0 ? (levelSum / levelCount).toFixed(1) : '–'} />
+        <Tile label="Vols réussis" value={String(steals)} />
+      </View>
+
+      {sorted.map((p) => (
+        <Card key={p.id} style={{ gap: 2 }}>
+          <T variant="body" color={p.color} style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+            {p.name}
+          </T>
+          <T variant="caption" color={palette.textMuted}>
+            {p.played > 0 ? `${p.correct}/${p.played} justes (${Math.round((p.correct / p.played) * 100)} %)` : 'Aucune question personnelle'} ·
+            niveau moyen {p.levelCount > 0 ? (p.levelSum / p.levelCount).toFixed(1) : '–'} · plus haut niveau réussi{' '}
+            {p.maxLevelWon || '–'}
+          </T>
+          <T variant="caption" color={palette.textMuted}>
+            Vols réussis {p.stealWins}/{p.stealAttempts} · meilleure série {p.bestStreak}
+          </T>
+        </Card>
+      ))}
+
+      {trophies.length > 0 && (
+        <>
+          <SectionTitle>Trophées</SectionTitle>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {trophies.map(({ player, id }) => (
+              <View
+                key={`${player.id}-${id}`}
+                style={{ width: '48%', backgroundColor: palette.goldSoft, borderRadius: radius.button, padding: 12, gap: 2 }}
+              >
+                <T variant="heading">{TROPHIES[id]?.emoji}</T>
+                <T variant="caption" style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+                  {TROPHIES[id]?.name}
+                </T>
+                <T variant="caption" color={palette.textMuted}>
+                  {player.name}
+                </T>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+
+      {onStartChallenge && (
+        <Card tone="gold" borderColor={palette.gold} style={{ gap: 8 }}>
+          <T variant="heading">Mode Challenger</T>
+          <T variant="body" color={palette.textMuted}>
+            Prolongez la partie : chacun choisit son thème, le niveau (5 à 10) est tiré au sort. Les scores et les jokers
+            non utilisés continuent.
+          </T>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            <Button label="−" variant="secondary" onPress={() => setChallengeRounds((n) => Math.max(1, n - 1))} />
+            <T variant="heading" numeric>
+              {challengeRounds} manche{challengeRounds > 1 ? 's' : ''}
+            </T>
+            <Button label="+" variant="secondary" onPress={() => setChallengeRounds((n) => Math.min(5, n + 1))} />
+          </View>
+          <Button label="Activer le mode Challenger" variant="gold" onPress={() => onStartChallenge(challengeRounds)} />
+        </Card>
+      )}
+    </ScreenBody>
+  );
+}

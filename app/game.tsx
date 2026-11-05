@@ -1,11 +1,16 @@
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, PLAYER_COLORS } from '@/constants/theme';
-import { useGame } from '@/context/GameContext';
-import { useScreenFlash } from '@/components/ui/ScreenFlash';
 import { Button } from '@/components/ui/Button';
-import { ScoreStrip } from '@/components/game/ScoreStrip';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Header } from '@/components/ui/Header';
+import { Frame, Screen } from '@/components/ui/Screen';
+import { ScoreBar } from '@/components/ui/ScoreBar';
+import { SwitchRow } from '@/components/ui/SwitchRow';
+import { T } from '@/components/ui/Typography';
+import { TrophyQueue } from '@/components/ui/TrophyQueue';
+import { TvBubble } from '@/components/ui/TvBubble';
+import { useScreenFlash } from '@/components/ui/ScreenFlash';
 import { RoundIntro } from '@/components/game/phases/RoundIntro';
 import { LevelSelect } from '@/components/game/phases/LevelSelect';
 import { AuctionBid } from '@/components/game/phases/AuctionBid';
@@ -22,54 +27,35 @@ import { FinalResults } from '@/components/game/phases/FinalResults';
 import { ChallengeFinalResults } from '@/components/game/phases/ChallengeFinalResults';
 import { MultiJudge } from '@/components/game/phases/MultiJudge';
 import { AllInSetup } from '@/components/game/phases/AllInSetup';
+import { useGame } from '@/context/GameContext';
+import { activePlayerId, canAllIn } from '@/lib/gameReducer';
+import { hapticsEnabled, setHapticsEnabled } from '@/lib/haptics';
+import { palette } from '@/theme/tokens';
+
+const SUMMARY_PHASES = ['round-summary', 'challenge-round-summary'];
 
 export default function GameScreen() {
   const router = useRouter();
-  const {
-    state,
-    beginLevelSelect,
-    chooseLevel,
-    revealAnswer,
-    judge,
-    beginBraquage,
-    startThief,
-    thiefJudge,
-    skipThief,
-    continueAfterSteal,
-    resolveAuction,
-    nextRound,
-    startChallenge,
-    chooseChallengeCategory,
-    beginChallengeRound,
-    nextChallengeRound,
-    playJoker,
-    replaceQuestion,
-    resolveBonus,
-    resolveKiller,
-    openAllIn,
-    startAllIn,
-    cancelAllIn,
-    removePlayer,
-    undo,
-    reset,
-    currentCategory,
-    currentPlayer,
-    currentPlayerCategory,
-  } = useGame();
+  const g = useGame();
+  const { state } = g;
   const { flash, overlay } = useScreenFlash();
+  const [menu, setMenu] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [haptics, setHaptics] = useState(hapticsEnabled());
 
   if (state.phase === 'idle') {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.emptyText}>Aucune partie en cours.</Text>
-        <Button label="Retour à l'accueil" onPress={() => router.replace('/')} style={styles.emptyButton} />
-      </SafeAreaView>
+      <Screen center bottom={<Button label="Retour à l’accueil" size="l" onPress={() => router.replace('/')} />}>
+        <T variant="body" center color={palette.textMuted}>
+          Aucune partie en cours.
+        </T>
+      </Screen>
     );
   }
 
   const isChallenge = state.mode === 'challenge';
-  const category = currentCategory();
-  const activeCategoryName = isChallenge ? currentPlayerCategory()?.name ?? '' : category?.name ?? '';
+  const category = g.currentCategory();
+  const activeCategoryName = isChallenge ? g.currentPlayerCategory()?.name ?? '' : category?.name ?? '';
   const targetPlayerId = state.turnOrder[state.currentTurnIndex];
   const targetPlayer = state.players.find((p) => p.id === targetPlayerId);
   const activeLevel = state.auctionWinnerId
@@ -78,9 +64,7 @@ export default function GameScreen() {
     ? state.challengeLevels[state.challengeRound - 1]
     : state.levelChoices[targetPlayerId];
 
-  const eligibleBraqueurs = state.players.filter(
-    (p) => p.id !== targetPlayerId && !state.braqueursUsed.includes(p.id)
-  );
+  const eligibleBraqueurs = state.players.filter((p) => p.id !== targetPlayerId && !state.braqueursUsed.includes(p.id));
   const braquageInfo = state.braquage
     ? {
         braqueurName: state.players.find((p) => p.id === state.braquage!.braqueurId)?.name ?? '',
@@ -88,287 +72,331 @@ export default function GameScreen() {
       }
     : null;
 
-  const answeringLabel = state.braquage
-    ? `🔴 ${braquageInfo?.braqueurName} braque ${braquageInfo?.victimName}`
-    : state.auctionWinnerId
-    ? `💰 ${currentPlayer()?.name ?? ''} (enchère gagnée)`
-    : currentPlayer()?.name ?? '';
+  const answerer = g.currentPlayer();
+  const answerContext = state.braquage
+    ? `Question braquée par ${braquageInfo?.braqueurName} · Niveau ${activeLevel} · ${activeLevel} pts`
+    : `Question ${answerer?.name ? `de ${answerer.name}` : ''} · Niveau ${activeLevel} · ${activeLevel} pts`;
 
-  const thiefId = state.thiefCandidates[0];
-  const thiefName = state.players.find((p) => p.id === thiefId)?.name ?? '';
-  const colorOf = (id: string) => state.players.find((p) => p.id === id)?.color ?? PLAYER_COLORS[0];
-  const killerContenders = (state.killer?.contenders ?? []).map((id) => ({
-    id,
-    name: state.players.find((p) => p.id === id)?.name ?? '',
-    color: colorOf(id),
-  }));
+  const thief = state.players.find((p) => p.id === state.thiefCandidates[0]);
+  const takenBy: Record<number, { name: string; color: string }> = {};
+  for (const [id, lvl] of Object.entries(state.levelChoices)) {
+    const p = state.players.find((x) => x.id === id);
+    if (p) takenBy[lvl] = { name: p.name, color: p.color };
+  }
+  const contenders = (ids: string[]) =>
+    ids.map((id) => {
+      const p = state.players.find((x) => x.id === id);
+      return { id, name: p?.name ?? '', color: p?.color ?? palette.primary };
+    });
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? '';
 
-  const handleBraquage = (braqueurId: string) => {
-    beginBraquage(braqueurId);
-    flash(colors.braquage);
-  };
+  const inSummary = SUMMARY_PHASES.includes(state.phase);
+  const inFinal = state.phase === 'final-results' || state.phase === 'challenge-final-results';
+  const headerTitle = isChallenge ? `Défi ${state.challengeRound} / ${state.challengeTotal}` : `Manche ${state.round} / ${state.totalRounds}`;
+  const showTrophies = state.newTrophies.length > 0 && (inSummary || inFinal);
 
-  const handleReport = () =>
-    Alert.alert('Signaler la question', 'Elle sera remplacée par une autre du même niveau, sans consommer de joker.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Remplacer', onPress: replaceQuestion },
-    ]);
-
-  const handleQuit = () => {
+  const quit = () =>
     Alert.alert('Quitter la partie ?', 'La partie en cours sera perdue.', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Quitter',
         style: 'destructive',
         onPress: () => {
-          reset();
+          g.reset();
           router.replace('/');
         },
       },
     ]);
-  };
 
-  const replay = () => {
-    reset();
+  const report = () =>
+    Alert.alert('Signaler la question', 'Elle sera remplacée par une autre du même niveau, sans consommer de joker.', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Remplacer', onPress: g.replaceQuestion },
+    ]);
+
+  const confirmRemove = (id: string) =>
+    Alert.alert(`Retirer ${nameOf(id)} ?`, 'Le joueur quitte la partie et le classement est recalculé.', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Retirer',
+        style: 'destructive',
+        onPress: () => {
+          g.removePlayer(id);
+          setMenu(false);
+          setRemoving(false);
+        },
+      },
+    ]);
+
+  const goHome = () => {
+    g.reset();
     router.replace('/');
   };
 
-  const killerTitle =
-    state.killer?.context === 'final'
-      ? 'Égalité en tête : seuls les joueurs à égalité répondent.'
-      : state.killer?.context === 'allin'
-      ? `Mise : ${state.killer.stake} points. Les deux joueurs répondent à la même question.`
-      : 'Plusieurs bonnes réponses : cette question départage les joueurs concernés.';
+  const replaySamePlayers = () =>
+    g.startGame(
+      state.players.map((p) => ({ name: p.name })),
+      state.totalRounds,
+      state.connectionMode,
+      { thiefMode: state.thiefModeEnabled, tvHost: state.tvHost }
+    );
+
+  const killerCopy = (() => {
+    const k = state.killer;
+    if (!k) return null;
+    if (k.context === 'allin') {
+      return {
+        icon: 'zap' as const,
+        kicker: 'Duel All-In',
+        title: `${nameOf(k.contenders[0])} contre ${nameOf(k.contenders[1])}`,
+        rule: `Mise : ${k.stake} points. Même question pour les deux : le gagnant ramasse la mise.`,
+      };
+    }
+    if (k.context === 'final') {
+      return {
+        icon: 'target' as const,
+        kicker: 'Killer Question',
+        title: 'Égalité en tête !',
+        rule: 'Seuls les joueurs à égalité répondent. On continue jusqu’à un vainqueur unique.',
+      };
+    }
+    return {
+      icon: 'target' as const,
+      kicker: 'Killer Question',
+      title: 'Plusieurs bonnes réponses',
+      rule: 'Cette question départage uniquement les joueurs concernés. Le gagnant remporte les 10 points.',
+    };
+  })();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <Text style={styles.roundLabel}>
-            {isChallenge
-              ? `DÉFI ${state.challengeRound} / ${state.challengeTotal}`
-              : `MANCHE ${state.round} / ${state.totalRounds}`}
-          </Text>
-          <View style={styles.headerButtons}>
-            {state.prevState && <Button label="↩️ Annuler" variant="secondary" onPress={undo} style={styles.quitButton} />}
-            <Button label="✕" variant="secondary" onPress={handleQuit} style={styles.quitButton} />
-          </View>
-        </View>
-        <ScoreStrip players={state.players} />
-      </View>
+    <Frame
+      header={
+        <>
+          <Header
+            title={headerTitle}
+            onUndo={g.undo}
+            undoDisabled={!state.prevState}
+            onMenu={() => setMenu(true)}
+            onClose={quit}
+          />
+          <ScoreBar players={state.players} activeId={activePlayerId(state)} />
+          {(inSummary || inFinal) && state.tvHost && <TvBubble text={state.commentary} />}
+        </>
+      }
+    >
+      <PhaseHost>
+        {state.phase === 'round-intro' && category && (
+          <RoundIntro
+            round={state.round}
+            total={state.totalRounds}
+            categoryName={category.name}
+            categoryDescription={category.shortDescription}
+            isAuctionRound={state.auctionRounds.includes(state.round)}
+            onStart={g.beginLevelSelect}
+          />
+        )}
 
-      {state.phase === 'round-intro' && category && (
-        <RoundIntro
-          categoryName={category.name}
-          categoryDescription={category.shortDescription}
-          isAuctionRound={state.auctionRounds.includes(state.round)}
-          onStart={beginLevelSelect}
-        />
-      )}
+        {state.phase === 'level-select' && targetPlayer && (
+          <LevelSelect
+            player={targetPlayer}
+            takenBy={takenBy}
+            onChoose={(level) => g.chooseLevel(targetPlayerId, level)}
+          />
+        )}
 
-      {state.phase === 'level-select' && (
-        <LevelSelect
-          playerName={currentPlayer()?.name ?? ''}
-          takenLevels={Object.values(state.levelChoices)}
-          onChoose={(level) => chooseLevel(targetPlayerId, level)}
-        />
-      )}
+        {state.phase === 'auction-bid' && (
+          <AuctionBid
+            categoryName={isChallenge ? undefined : category?.name}
+            players={state.players}
+            onResolve={g.resolveAuction}
+          />
+        )}
 
-      {state.phase === 'auction-bid' && (
-        <AuctionBid
-          categoryName={isChallenge ? undefined : category?.name}
-          players={state.players}
-          onResolve={resolveAuction}
-        />
-      )}
+        {state.phase === 'challenge-category-select' && targetPlayer && (
+          <ChallengeCategorySelect
+            player={targetPlayer}
+            onChoose={(categoryId) => g.chooseChallengeCategory(targetPlayerId, categoryId)}
+          />
+        )}
 
-      {state.phase === 'challenge-category-select' && (
-        <ChallengeCategorySelect
-          playerName={currentPlayer()?.name ?? ''}
-          onChoose={(categoryId) => chooseChallengeCategory(targetPlayerId, categoryId)}
-        />
-      )}
+        {state.phase === 'challenge-round-intro' && (
+          <ChallengeRoundIntro
+            round={state.challengeRound}
+            total={state.challengeTotal}
+            level={state.challengeLevels[state.challengeRound - 1]}
+            isAuctionRound={state.challengeAuctionRound === state.challengeRound}
+            onStart={g.beginChallengeRound}
+          />
+        )}
 
-      {state.phase === 'challenge-round-intro' && (
-        <ChallengeRoundIntro
-          round={state.challengeRound}
-          total={state.challengeTotal}
-          level={state.challengeLevels[state.challengeRound - 1]}
-          isAuctionRound={state.challengeAuctionRound === state.challengeRound}
-          onStart={beginChallengeRound}
-        />
-      )}
+        {state.phase === 'question' && activeCategoryName && state.currentQuestion && answerer && (
+          <QuestionView
+            categoryName={activeCategoryName}
+            level={activeLevel}
+            player={state.auctionWinnerId ? answerer : targetPlayer ?? answerer}
+            questionText={state.currentQuestion.question}
+            braquage={braquageInfo}
+            isAuction={!!state.auctionWinnerId}
+            eligibleBraqueurs={eligibleBraqueurs}
+            jokerAvailable={!targetPlayer?.jokerUsed}
+            onJoker={() => g.playJoker()}
+            onReport={report}
+            onReveal={g.revealAnswer}
+            onBraquage={(id) => {
+              g.beginBraquage(id);
+              flash(palette.danger);
+            }}
+          />
+        )}
 
-      {state.phase === 'question' && activeCategoryName && state.currentQuestion && (
-        <QuestionView
-          categoryName={activeCategoryName}
-          level={activeLevel}
-          playerName={currentPlayer()?.name ?? ''}
-          questionText={state.currentQuestion.question}
-          braquage={braquageInfo}
-          isAuction={!!state.auctionWinnerId}
-          eligibleBraqueurs={eligibleBraqueurs}
-          connectionMode={state.connectionMode}
-          jokerAvailable={!targetPlayer?.jokerUsed}
-          onJoker={() => {
-            playJoker();
-            flash(colors.joker);
-          }}
-          onReport={handleReport}
-          onReveal={revealAnswer}
-          onBraquage={handleBraquage}
-        />
-      )}
+        {state.phase === 'answer-reveal' && state.currentQuestion && (
+          <AnswerReveal
+            context={answerContext}
+            question={state.currentQuestion}
+            secret={state.thiefModeEnabled && !state.braquage && !state.auctionWinnerId}
+            onJudge={g.judge}
+          />
+        )}
 
-      {state.phase === 'answer-reveal' && state.currentQuestion && (
-        <AnswerReveal
-          answeringLabel={answeringLabel}
-          question={state.currentQuestion}
-          secret={state.thiefModeEnabled && !state.braquage && !state.auctionWinnerId}
-          onJudge={judge}
-        />
-      )}
+        {state.phase === 'thief-offer' && (
+          <ThiefOffer
+            victimName={targetPlayer?.name ?? ''}
+            level={activeLevel}
+            candidates={state.players.filter((p) => p.id !== targetPlayerId)}
+            onStart={g.startThief}
+          />
+        )}
 
-      {state.phase === 'thief-offer' && (
-        <ThiefOffer
-          victimName={targetPlayer?.name ?? ''}
-          level={activeLevel}
-          candidates={state.players.filter((p) => p.id !== targetPlayerId)}
-          onStart={startThief}
-        />
-      )}
+        {state.phase === 'thief-attempt' && state.currentQuestion && thief && (
+          <ThiefAttempt
+            thief={thief}
+            level={activeLevel}
+            remaining={state.thiefCandidates.length}
+            question={state.currentQuestion}
+            onJudge={g.thiefJudge}
+            onSkip={g.skipThief}
+          />
+        )}
 
-      {state.phase === 'thief-attempt' && state.currentQuestion && (
-        <ThiefAttempt
-          thiefName={thiefName}
-          level={activeLevel}
-          remaining={state.thiefCandidates.length}
-          question={state.currentQuestion}
-          onJudge={thiefJudge}
-          onSkip={skipThief}
-        />
-      )}
+        {state.phase === 'thief-reveal' && state.currentQuestion && (
+          <ThiefReveal question={state.currentQuestion} onContinue={g.continueAfterSteal} />
+        )}
 
-      {state.phase === 'thief-reveal' && state.currentQuestion && (
-        <ThiefReveal question={state.currentQuestion} onContinue={continueAfterSteal} />
-      )}
+        {state.phase === 'round-summary' && (
+          <RoundSummary
+            players={state.players}
+            deltas={state.rankDeltas}
+            isLastRound={state.round >= state.totalRounds && (state.round % 3 !== 0 || state.bonusDoneRound === state.round)}
+            allInPossible={canAllIn(state.players)}
+            onNext={g.nextRound}
+            onAllIn={g.openAllIn}
+          />
+        )}
 
-      {state.phase === 'round-summary' && (
-        <RoundSummary
-          players={state.players}
-          commentary={state.commentary}
-          newTrophies={state.newTrophies}
-          isLastRound={state.round >= state.totalRounds && (state.round % 3 !== 0 || state.bonusDoneRound === state.round)}
-          onNext={nextRound}
-          onAllIn={openAllIn}
-          onRemovePlayer={removePlayer}
-        />
-      )}
+        {state.phase === 'challenge-round-summary' && (
+          <ChallengeRoundSummary
+            players={state.players}
+            deltas={state.rankDeltas}
+            isLastRound={state.challengeRound >= state.challengeTotal}
+            allInPossible={canAllIn(state.players)}
+            onNext={g.nextChallengeRound}
+            onAllIn={g.openAllIn}
+          />
+        )}
 
-      {state.phase === 'challenge-round-summary' && (
-        <ChallengeRoundSummary
-          players={state.players}
-          commentary={state.commentary}
-          newTrophies={state.newTrophies}
-          isLastRound={state.challengeRound >= state.challengeTotal}
-          onNext={nextChallengeRound}
-          onAllIn={openAllIn}
-          onRemovePlayer={removePlayer}
-        />
-      )}
+        {state.phase === 'bonus-question' && (
+          <MultiJudge
+            key={`bonus-${state.round}`}
+            icon="star"
+            kicker="Question bonus"
+            title="10 points à gagner"
+            rule="Une seule question très difficile, posée à tout le monde. Plusieurs bonnes réponses : une Killer Question les départage."
+            question={state.bonusQuestion}
+            contenders={contenders(state.players.map((p) => p.id))}
+            onSubmit={g.resolveBonus}
+          />
+        )}
 
-      {state.phase === 'bonus-question' && (
-        <MultiJudge
-          eyebrow="QUESTION BONUS — 10 POINTS"
-          title="Une question très difficile pour tous"
-          subtitle="Tout le monde répond, puis la réponse est révélée."
-          question={state.bonusQuestion}
-          contenders={state.players}
-          submitLabel="Valider"
-          onSubmit={resolveBonus}
-        />
-      )}
+        {state.phase === 'allin-setup' && <AllInSetup players={state.players} onStart={g.startAllIn} onCancel={g.cancelAllIn} />}
 
-      {state.phase === 'allin-setup' && (
-        <AllInSetup players={state.players} onStart={startAllIn} onCancel={cancelAllIn} />
-      )}
+        {state.phase === 'killer' && state.killer && killerCopy && (
+          <MultiJudge
+            key={`killer-${state.killer.context}-${state.killer.contenders.join('-')}`}
+            icon={killerCopy.icon}
+            kicker={killerCopy.kicker}
+            title={killerCopy.title}
+            rule={killerCopy.rule}
+            gold={state.killer.context !== 'final'}
+            question={state.killer.question}
+            contenders={contenders(state.killer.contenders)}
+            onSubmit={g.resolveKiller}
+          />
+        )}
 
-      {state.phase === 'killer' && state.killer && (
-        <MultiJudge
-          eyebrow={state.killer.context === 'allin' ? '🎲 DUEL ALL-IN' : '⚔️ KILLER QUESTION'}
-          title={state.killer.context === 'allin' ? `${nameOf(state.killer.contenders[0])} vs ${nameOf(state.killer.contenders[1])}` : undefined}
-          subtitle={killerTitle}
-          accent={colors.braquage}
-          question={state.killer.question}
-          contenders={killerContenders}
-          submitLabel="Valider"
-          onSubmit={resolveKiller}
-        />
-      )}
+        {state.phase === 'final-results' && (
+          <FinalResults
+            players={state.players}
+            winnerId={state.finalWinnerId}
+            onReplay={replaySamePlayers}
+            onHome={goHome}
+            onStartChallenge={g.startChallenge}
+          />
+        )}
 
-      {state.phase === 'final-results' && (
-        <FinalResults
-          players={state.players}
-          winnerId={state.finalWinnerId}
-          commentary={state.commentary}
-          onReplay={replay}
-          onStartChallenge={startChallenge}
-        />
-      )}
+        {state.phase === 'challenge-final-results' && (
+          <ChallengeFinalResults
+            players={state.players}
+            winnerId={state.finalWinnerId}
+            onReplay={replaySamePlayers}
+            onHome={goHome}
+          />
+        )}
+      </PhaseHost>
 
-      {state.phase === 'challenge-final-results' && (
-        <ChallengeFinalResults
-          players={state.players}
-          winnerId={state.finalWinnerId}
-          commentary={state.commentary}
-          onReplay={replay}
-        />
-      )}
+      {showTrophies && <TrophyQueue key={state.newTrophies.length} events={state.newTrophies} players={state.players} onDone={g.ackTrophies} />}
+
+      <BottomSheet visible={menu} title="Menu de la partie" onClose={() => { setMenu(false); setRemoving(false); }}>
+        {!removing ? (
+          <>
+            <Button
+              label="Règles du jeu"
+              icon="book-open"
+              variant="secondary"
+              onPress={() => {
+                setMenu(false);
+                router.push('/how-to-play');
+              }}
+            />
+            {inSummary && state.players.length > 2 && (
+              <Button label="Retirer un joueur" icon="user-minus" variant="secondary" onPress={() => setRemoving(true)} />
+            )}
+            <SwitchRow
+              title="Retours haptiques"
+              description="Vibrations sur les réponses et les choix."
+              value={haptics}
+              onValueChange={(v) => {
+                setHaptics(v);
+                setHapticsEnabled(v);
+              }}
+            />
+            <Button label="Quitter la partie" icon="log-out" variant="danger" onPress={() => { setMenu(false); quit(); }} />
+          </>
+        ) : (
+          <>
+            {state.players.map((p) => (
+              <Button key={p.id} label={`Retirer ${p.name}`} variant="secondary" onPress={() => confirmRemove(p.id)} />
+            ))}
+            <Button label="Retour" variant="ghost" onPress={() => setRemoving(false)} />
+          </>
+        )}
+      </BottomSheet>
 
       {overlay}
-    </SafeAreaView>
+    </Frame>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: 20,
-  },
-  header: {
-    paddingTop: 8,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  roundLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  quitButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 100,
-  },
-  emptyButton: {
-    marginHorizontal: 24,
-    marginTop: 16,
-  },
-});
+// Les phases fournissent leur propre ScreenBody (défilement + barre du bas).
+function PhaseHost({ children }: { children: React.ReactNode }) {
+  return <View style={{ flex: 1 }}>{children}</View>;
+}
