@@ -1,0 +1,16 @@
+import { Question } from '@/types';
+
+const categoryId = 'star-wars';
+
+export const starWarsQuestions: Question[] = [
+  { id: 'star-wars-1-01', categoryId, level: 1, question: "Quelle arme lumineuse, symbole des Jedi et des Sith, est utilisée dans Star Wars ?", answer: "Le sabre laser", acceptedAnswers: ["Sabre laser", "Le sabre laser"], explanation: "Chaque sabre laser possède une couleur de lame propre au personnage qui le manie." },
+  { id: 'star-wars-2-01', categoryId, level: 2, question: "Quel est le nom du grand méchant emblématique, ancien Jedi passé du côté obscur, dans la première trilogie Star Wars ?", answer: "Dark Vador", acceptedAnswers: ["Dark Vador", "Darth Vader"], explanation: "Dark Vador est en réalité Anakin Skywalker, le père de Luke." },
+  { id: 'star-wars-3-01', categoryId, level: 3, question: "Quel petit robot rond, compagnon fidèle de nombreux héros, apparaît dans la saga Star Wars ?", answer: "R2-D2", acceptedAnswers: ["R2-D2", "R2D2"], explanation: "R2-D2 accompagne notamment Luke Skywalker et Anakin Skywalker à travers la saga." },
+  { id: 'star-wars-4-01', categoryId, level: 4, question: "Quel personnage prononce la célèbre réplique \"Je suis ton père\" à Luke Skywalker ?", answer: "Dark Vador", acceptedAnswers: ["Dark Vador", "Darth Vader"], explanation: "Cette révélation a lieu dans L'Empire contre-attaque (1980)." },
+  { id: 'star-wars-5-01', categoryId, level: 5, question: "Quelle organisation de guerriers, dotés de pouvoirs liés à la Force, protège la paix dans la galaxie ?", answer: "Les Jedi", acceptedAnswers: ["Jedi", "Les Jedi", "L'Ordre Jedi"], explanation: "Les Jedi s'opposent traditionnellement aux Sith, qui utilisent le côté obscur de la Force." },
+  { id: 'star-wars-6-01', categoryId, level: 6, question: "Quel est le nom de la planète natale d'Anakin et Luke Skywalker, un monde désertique à deux soleils ?", answer: "Tatooine", acceptedAnswers: ["Tatooine"], explanation: "Tatooine est l'un des décors les plus emblématiques de la saga." },
+  { id: 'star-wars-7-01', categoryId, level: 7, question: "Quel réalisateur a créé la saga Star Wars et en a écrit les six premiers films ?", answer: "George Lucas", acceptedAnswers: ["George Lucas"], explanation: "George Lucas sort le premier film de la saga en 1977." },
+  { id: 'star-wars-8-01', categoryId, level: 8, question: "Quel est le vrai nom de l'Empereur, maître Sith dirigeant l'Empire galactique ?", answer: "Palpatine (Dark Sidious)", acceptedAnswers: ["Palpatine", "Dark Sidious", "Sheev Palpatine"], explanation: "Palpatine dissimule son identité de seigneur Sith derrière son rôle de chancelier puis d'empereur." },
+  { id: 'star-wars-9-01', categoryId, level: 9, question: "Quel est le nom du désert où se déroule une grande partie de l'action du film Le Réveil de la Force (2015) ?", answer: "Jakku", acceptedAnswers: ["Jakku"], explanation: "C'est sur cette planète désertique que Rey est découverte au début de la nouvelle trilogie." },
+  { id: 'star-wars-10-01', categoryId, level: 10, question: "Quel est le nom du compositeur ayant écrit la musique emblématique de la saga Star Wars, dont le célèbre thème principal ?", answer: "John Williams", acceptedAnswers: ["John Williams"], explanation: "John Williams a composé la musique de la quasi-totalité des films Star Wars depuis 1977." },
+];

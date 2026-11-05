@@ -1,0 +1,16 @@
+import { Question } from '@/types';
+
+const categoryId = 'elements-chimiques';
+
+export const elementsChimiquesQuestions: Question[] = [
+  { id: 'elements-chimiques-1-01', categoryId, level: 1, question: "Quel gaz, indispensable à la respiration humaine, porte le symbole O ?", answer: "L'oxygène", acceptedAnswers: ["Oxygène", "L'oxygène"], explanation: "L'oxygène représente environ 21% de l'air que nous respirons." },
+  { id: 'elements-chimiques-2-01', categoryId, level: 2, question: "Quel métal précieux et jaune porte le symbole chimique Au ?", answer: "L'or", acceptedAnswers: ["Or", "L'or"], explanation: "Le symbole Au vient du latin \"aurum\"." },
+  { id: 'elements-chimiques-3-01', categoryId, level: 3, question: "Quel élément chimique, de symbole H, est le plus léger et le plus abondant de l'univers ?", answer: "L'hydrogène", acceptedAnswers: ["Hydrogène", "L'hydrogène"], explanation: "L'hydrogène compose environ 75% de la masse observable de l'univers." },
+  { id: 'elements-chimiques-4-01', categoryId, level: 4, question: "Quel élément, de symbole Fe, est le principal composant de l'acier ?", answer: "Le fer", acceptedAnswers: ["Fer", "Le fer"], explanation: "Le symbole Fe vient du latin \"ferrum\"." },
+  { id: 'elements-chimiques-5-01', categoryId, level: 5, question: "Quel élément chimique, de symbole Na, entre dans la composition du sel de table ?", answer: "Le sodium", acceptedAnswers: ["Sodium", "Le sodium"], explanation: "Le sel de table est du chlorure de sodium (NaCl)." },
+  { id: 'elements-chimiques-6-01', categoryId, level: 6, question: "Quel gaz noble, de symbole He, est utilisé pour gonfler les ballons car plus léger que l'air ?", answer: "L'hélium", acceptedAnswers: ["Hélium", "L'hélium"], explanation: "L'hélium est un gaz inerte, ce qui le rend sûr pour cet usage contrairement à l'hydrogène." },
+  { id: 'elements-chimiques-7-01', categoryId, level: 7, question: "Quel élément chimique radioactif, de symbole U, est utilisé comme combustible dans les centrales nucléaires ?", answer: "L'uranium", acceptedAnswers: ["Uranium", "L'uranium"], explanation: "L'uranium 235 est l'isotope principalement utilisé pour la fission nucléaire." },
+  { id: 'elements-chimiques-8-01', categoryId, level: 8, question: "Quel élément chimique radioactif, de symbole Ra, a été découvert par Marie et Pierre Curie en 1898 ?", answer: "Le radium", acceptedAnswers: ["Radium", "Le radium"], explanation: "La découverte du radium a valu à Marie Curie son second prix Nobel, en chimie." },
+  { id: 'elements-chimiques-9-01', categoryId, level: 9, question: "Quel élément chimique porte le symbole W, hérité de son ancien nom \"wolfram\" ?", answer: "Le tungstène", acceptedAnswers: ["Tungstène", "Le tungstène"], explanation: "Le tungstène possède le point de fusion le plus élevé de tous les métaux, ce qui explique son usage dans les filaments d'ampoules." },
+  { id: 'elements-chimiques-10-01', categoryId, level: 10, question: "Quel élément chimique superlourd et hautement instable, de symbole Og, porte le nom en hommage au physicien russe Iouri Oganessian ?", answer: "L'oganesson", acceptedAnswers: ["Oganesson", "L'oganesson"], explanation: "L'oganesson est, à ce jour, l'élément le plus lourd du tableau périodique officiellement reconnu." },
+];
