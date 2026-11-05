@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { T } from './Typography';
 import { palette, radius, space } from '@/theme/tokens';
@@ -46,7 +46,9 @@ export function PlayerBadge({ player, active, compact }: PlayerBadgeProps) {
 // Bandeau des scores : une pastille par joueur, le joueur actif est mis en
 // avant. Défile horizontalement au-delà de 5 joueurs.
 export function ScoreBar({ players, activeId }: { players: ScoreBarPlayer[]; activeId?: string }) {
-  const scrolls = players.length > 5;
+  const { width } = useWindowDimensions();
+  // Défile dès que les pastilles ne tiennent plus côte à côte (petit écran ou > 5 joueurs).
+  const scrolls = players.length > 5 || players.length * 84 + space.lg * 2 > width;
   const content = players.map((p) => (
     <View key={p.id} style={scrolls ? undefined : styles.cell}>
       <PlayerBadge player={p} active={p.id === activeId} compact={!scrolls && players.length > 3} />

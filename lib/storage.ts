@@ -70,13 +70,12 @@ export async function clearHistory(): Promise<void> {
 }
 
 // Idempotent: the game id is derived from the first player's id, which embeds
-// the creation timestamp, so re-saving the same finished game is a no-op.
+// the creation timestamp, so re-saving the same game replaces its entry.
 export async function saveFinishedGame(state: GameState): Promise<void> {
   if (state.players.length === 0) return;
   try {
     const id = state.players[0].id;
     const history = await loadHistory();
-    if (history.some((g) => g.id === id)) return;
     const sorted = [...state.players].sort((a, b) => b.score - a.score);
     const game: FinishedGame = {
       id,
@@ -98,6 +97,12 @@ export async function saveFinishedGame(state: GameState): Promise<void> {
         trophies: p.trophies,
       })),
     };
-    await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify([game, ...history].slice(0, MAX_HISTORY)));
+    // Même partie rejouée en mode Challenger : on met à jour l'entrée existante.
+    const others = history.filter((g) => g.id !== id);
+    const previous = history.find((g) => g.id === id);
+    await AsyncStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify([previous ? { ...game, date: previous.date } : game, ...others].slice(0, MAX_HISTORY))
+    );
   } catch {}
 }

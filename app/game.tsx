@@ -269,6 +269,7 @@ export default function GameScreen() {
 
         {state.phase === 'thief-attempt' && state.currentQuestion && thief && (
           <ThiefAttempt
+            key={thief.id}
             thief={thief}
             level={activeLevel}
             remaining={state.thiefCandidates.length}
