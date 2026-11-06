@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { FlipCard } from '@/components/ui/FlipCard';
+import { PopCard, SoftCard } from '@/components/ui/Card';
+import { Pill } from '@/components/ui/Pill';
 import { ScreenBody } from '@/components/ui/Screen';
 import { T } from '@/components/ui/Typography';
+import { questionFontSize } from '@/components/ui/QuestionCard';
+import { playSound } from '@/lib/sounds';
 import { palette } from '@/theme/tokens';
 import { Judgement } from '@/types';
 
 type AnswerRevealProps = {
+  questionText: string;
   // « Question d'Arnaud · Niveau 5 · 5 pts »
   context: string;
   question: { answer: string; acceptedAnswers: string[]; explanation: string; anecdote?: string };
@@ -17,9 +22,64 @@ type AnswerRevealProps = {
   onJudge: (judgement: Judgement) => void;
 };
 
-export function AnswerReveal({ context, question, secret, onJudge }: AnswerRevealProps) {
+// « Le Retournement » : la carte question pivote pour montrer la réponse.
+export function AnswerReveal({ questionText, context, question, secret, onJudge }: AnswerRevealProps) {
+  const [flipped, setFlipped] = useState(false);
   const [shown, setShown] = useState(!secret);
   const others = question.acceptedAnswers.filter((a) => a !== question.answer);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setFlipped(true);
+      playSound('reveal');
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
+
+  const front = (
+    <PopCard>
+      <T variant="title" center style={questionFontSize(questionText)}>
+        {questionText}
+      </T>
+    </PopCard>
+  );
+
+  const back = (
+    <PopCard tone="soft" style={{ gap: 10, alignItems: 'center' }}>
+      <T variant="caption" color={palette.inkSoft} style={{ letterSpacing: 1.2 }}>
+        RÉPONSE ATTENDUE
+      </T>
+      {shown ? (
+        <>
+          <T variant="display" center color={palette.ink} adjustsFontSizeToFit numberOfLines={3}>
+            {question.answer}
+          </T>
+          {others.length > 0 && (
+            <T variant="caption" color={palette.inkSoft} center>
+              Aussi accepté : {others.join(', ')}
+            </T>
+          )}
+          {!secret && (
+            <SoftCard style={{ gap: 6, alignSelf: 'stretch' }}>
+              <T variant="body">{question.explanation}</T>
+              {question.anecdote ? (
+                <T variant="caption" color={palette.inkSoft}>
+                  {question.anecdote}
+                </T>
+              ) : null}
+            </SoftCard>
+          )}
+        </>
+      ) : (
+        <>
+          <T variant="body" color={palette.inkSoft} center>
+            Mode Voleur : la réponse reste cachée à la tablée.
+          </T>
+          <Button label="Organisateur : voir la réponse" icon="eye" variant="secondary" onPress={() => setShown(true)} />
+        </>
+      )}
+    </PopCard>
+  );
 
   return (
     <ScreenBody
@@ -27,51 +87,15 @@ export function AnswerReveal({ context, question, secret, onJudge }: AnswerRevea
       bottom={
         <>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Button label="Faux" icon="x" variant="danger" size="l" style={{ flex: 1 }} onPress={() => onJudge('incorrect')} />
-            <Button label="Juste" icon="check" variant="success" size="l" style={{ flex: 1 }} onPress={() => onJudge('correct')} />
+            <Button label="Faux" icon="x" variant="bad" size="xl" style={{ flex: 1 }} onPress={() => onJudge('incorrect')} />
+            <Button label="Juste" icon="check" variant="good" size="xl" style={{ flex: 1 }} onPress={() => onJudge('correct')} />
           </View>
           <Button label="Accepter quand même" variant="ghost" onPress={() => onJudge('accepted-anyway')} />
         </>
       }
     >
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <T variant="caption" color={palette.textMuted} style={{ letterSpacing: 1 }}>
-          RÉPONSE ATTENDUE
-        </T>
-        <T variant="caption" color={palette.textMuted}>
-          {context}
-        </T>
-      </View>
-
-      {shown ? (
-        <>
-          <T variant="display" center color={palette.success}>
-            {question.answer}
-          </T>
-          {others.length > 0 && (
-            <T variant="caption" color={palette.textMuted} center>
-              Aussi accepté : {others.join(', ')}
-            </T>
-          )}
-          {!secret && (
-            <Card tone="soft" style={{ gap: 8 }}>
-              <T variant="body">{question.explanation}</T>
-              {question.anecdote ? (
-                <T variant="caption" color={palette.textMuted}>
-                  {question.anecdote}
-                </T>
-              ) : null}
-            </Card>
-          )}
-        </>
-      ) : (
-        <Card tone="soft" style={{ alignItems: 'center', gap: 12 }}>
-          <T variant="body" color={palette.textMuted} center>
-            Mode Voleur : la réponse reste cachée à la tablée.
-          </T>
-          <Button label="Organisateur : voir la réponse" icon="eye" variant="secondary" onPress={() => setShown(true)} />
-        </Card>
-      )}
+      <Pill label={context} />
+      <FlipCard flipped={flipped} front={front} back={back} />
     </ScreenBody>
   );
 }

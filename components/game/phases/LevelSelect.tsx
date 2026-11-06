@@ -1,31 +1,32 @@
 import { View } from 'react-native';
-import { LevelGrid } from '@/components/ui/LevelGrid';
+import { Avatar } from '@/components/ui/Avatar';
+import { LevelWall } from '@/components/ui/LevelGrid';
 import { ScreenBody } from '@/components/ui/Screen';
 import { T } from '@/components/ui/Typography';
 import { palette } from '@/theme/tokens';
 
+type Person = { name: string; color: string; profileId?: string };
+
 type LevelSelectProps = {
-  player: { name: string; color: string };
+  player: Person;
   // Niveau -> joueur qui l'a pris dans cette manche.
-  takenBy: Record<number, { name: string; color: string }>;
+  takenBy: Record<number, Person>;
   onChoose: (level: number) => void;
 };
 
 export function LevelSelect({ player, takenBy, onChoose }: LevelSelectProps) {
   return (
     <ScreenBody gap={24}>
-      <View style={{ gap: 4, alignItems: 'center' }}>
-        <T variant="caption" color={palette.textMuted} style={{ letterSpacing: 1 }}>
-          CHOIX DU NIVEAU
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        <Avatar name={player.name} color={player.color} profileId={player.profileId} size={84} ring />
+        <T variant="title" center>
+          À toi, {player.name} !
         </T>
-        <T variant="title" center color={player.color}>
-          À toi, {player.name}
-        </T>
-        <T variant="body" color={palette.textMuted} center>
+        <T variant="body" color={palette.inkSoft} center>
           Quel niveau choisis-tu ?
         </T>
       </View>
-      <LevelGrid takenBy={takenBy} onChoose={onChoose} />
+      <LevelWall takenBy={takenBy} onChoose={onChoose} />
     </ScreenBody>
   );
 }

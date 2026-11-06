@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, ZoomIn, BounceInUp } from 'react-native-reanimated';
 import { haptic } from '@/lib/haptics';
+import { playSound } from '@/lib/sounds';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { TROPHIES } from '@/lib/trophies';
+import { Avatar } from './Avatar';
 import { Button } from './Button';
+import { Confetti } from './Confetti';
+import { TrophyBadge } from './TrophyBadge';
 import { T } from './Typography';
-import { palette, radius, space } from '@/theme/tokens';
+import { OUTLINE, palette, POP_OFFSET, radius, space } from '@/theme/tokens';
 import { Player, TrophyEvent } from '@/types';
 
 type TrophyQueueProps = {
@@ -14,73 +19,77 @@ type TrophyQueueProps = {
   onDone: () => void;
 };
 
-// Affiche les trophées débloqués un par un, dans une modale animée.
+// Trophées débloqués, un par un, en plein écran : le badge tombe et rebondit,
+// on tape pour continuer.
 export function TrophyQueue({ events, players, onDone }: TrophyQueueProps) {
+  const reduced = useReducedMotion();
+  // Trophée inconnu ou joueur retiré : ignoré sans bloquer la file.
+  const queue = events.filter((e) => TROPHIES[e.trophyId] && players.some((p) => p.id === e.playerId));
   const [index, setIndex] = useState(0);
-  const current = events[index];
+  const current = queue[index];
+  const trophy = current ? TROPHIES[current.trophyId] : undefined;
+  const player = current ? players.find((p) => p.id === current.playerId) : undefined;
+  const last = index + 1 >= queue.length;
+  const next = () => (last ? onDone() : setIndex(index + 1));
 
   useEffect(() => {
-    if (current) haptic.success();
-  }, [current]);
+    if (!current) {
+      onDone();
+      return;
+    }
+    haptic.success();
+    playSound('trophy');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
 
-  if (!current) return null;
-  const trophy = TROPHIES[current.trophyId];
-  const player = players.find((p) => p.id === current.playerId);
-  if (!trophy || !player) {
-    // Trophée inconnu ou joueur retiré : on passe au suivant sans bloquer.
-    return <Skip onSkip={() => (index + 1 < events.length ? setIndex(index + 1) : onDone())} />;
-  }
-  const last = index + 1 >= events.length;
+  if (!current || !trophy || !player) return null;
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={() => (last ? onDone() : setIndex(index + 1))}>
-      <View style={styles.backdrop}>
-        <Animated.View entering={ZoomIn.springify().damping(14)} style={styles.card}>
-          <T variant="caption" color={palette.gold} style={styles.kicker}>
-            NOUVEAU TROPHÉE
-          </T>
-          <Animated.Text entering={FadeIn.delay(150)} style={styles.emoji}>
-            {trophy.emoji}
-          </Animated.Text>
-          <T variant="title" center>
-            {trophy.name}
-          </T>
-          <T variant="body" color={palette.textMuted} center>
-            {player.name} — {trophy.description}
-          </T>
-          <Button
-            label={last ? 'Super !' : 'Suivant'}
-            size="l"
-            onPress={() => (last ? onDone() : setIndex(index + 1))}
-            style={styles.button}
-          />
+    <Modal transparent animationType="fade" visible onRequestClose={next}>
+      <Pressable style={styles.backdrop} onPress={next} accessibilityLabel="Continuer">
+        <Confetti gold />
+        <Animated.View entering={reduced ? FadeIn : ZoomIn.springify().damping(12)} style={styles.cardWrap}>
+          <View style={styles.shadow} />
+          <View style={styles.card}>
+            <T variant="caption" color={palette.goldDeep} style={styles.kicker}>
+              NOUVEAU TROPHÉE
+            </T>
+            <Animated.View entering={reduced ? FadeIn : BounceInUp.delay(150).duration(700)}>
+              <TrophyBadge id={current.trophyId} emoji={trophy.emoji} size={112} />
+            </Animated.View>
+            <T variant="title" center>
+              {trophy.name}
+            </T>
+            <View style={styles.who}>
+              <Avatar name={player.name} color={player.color} profileId={player.profileId} size={36} />
+              <T variant="body" style={{ fontFamily: 'Nunito_800ExtraBold' }}>
+                {player.name}
+              </T>
+            </View>
+            <T variant="body" color={palette.inkSoft} center>
+              {trophy.description}
+            </T>
+            <Button label={last ? 'Super !' : 'Suivant'} variant="gold" size="l" onPress={next} style={{ alignSelf: 'stretch', marginTop: space.sm }} />
+          </View>
         </Animated.View>
-      </View>
+      </Pressable>
     </Modal>
   );
 }
 
-function Skip({ onSkip }: { onSkip: () => void }) {
-  useEffect(() => {
-    onSkip();
-  }, [onSkip]);
-  return null;
-}
-
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(26,26,31,0.4)', alignItems: 'center', justifyContent: 'center', padding: space.xl },
+  backdrop: { flex: 1, backgroundColor: 'rgba(27,21,48,0.55)', alignItems: 'center', justifyContent: 'center', padding: space.xl },
+  cardWrap: { width: '100%', maxWidth: 380, paddingRight: POP_OFFSET, paddingBottom: POP_OFFSET },
+  shadow: { position: 'absolute', top: POP_OFFSET, left: POP_OFFSET, right: 0, bottom: 0, borderRadius: radius.card, backgroundColor: palette.ink },
   card: {
-    width: '100%',
-    maxWidth: 380,
     backgroundColor: palette.surface,
     borderRadius: radius.card,
+    borderWidth: OUTLINE,
+    borderColor: palette.line,
     padding: space.xl,
     alignItems: 'center',
     gap: space.sm,
-    borderWidth: 2,
-    borderColor: palette.gold,
   },
-  kicker: { letterSpacing: 1.2 },
-  emoji: { fontSize: 64, lineHeight: 80 },
-  button: { alignSelf: 'stretch', marginTop: space.md },
+  kicker: { letterSpacing: 1.4 },
+  who: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { ModeTitleCard } from '@/components/ui/ModeTitleCard';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
@@ -15,7 +16,8 @@ type MultiJudgeProps = {
   kicker: string; // « Question bonus », « Killer Question », « Duel All-In »
   title: string;
   rule: string; // règle en une phrase, affichée sur l'écran d'intro
-  gold?: boolean; // accent doré pour signaler l'événement
+  color: string; // couleur du mode (écran-titre)
+  ink?: string; // texte lisible sur cette couleur
   question: Question | null;
   contenders: { id: string; name: string; color: string }[];
   onSubmit: (correctIds: string[]) => void;
@@ -23,11 +25,10 @@ type MultiJudgeProps = {
 
 // Gabarit commun aux modes spéciaux (bonus, Killer Question, All-In) :
 // intro → question → révélation et choix de ceux qui ont trouvé.
-export function MultiJudge({ icon, kicker, title, rule, gold = true, question, contenders, onSubmit }: MultiJudgeProps) {
+export function MultiJudge({ icon, kicker, title, rule, color, ink, question, contenders, onSubmit }: MultiJudgeProps) {
   const [stage, setStage] = useState<'intro' | 'question' | 'judge'>('intro');
   const [correct, setCorrect] = useState<string[]>([]);
-  const accent = gold ? palette.gold : palette.primary;
-  const soft = gold ? palette.goldSoft : palette.primarySoft;
+  const accent = palette.ink;
   const toggle = (id: string) => setCorrect((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const submit = () => {
@@ -39,22 +40,7 @@ export function MultiJudge({ icon, kicker, title, rule, gold = true, question, c
 
   if (stage === 'intro') {
     return (
-      <ScreenBody center bottom={<Button label="C’est parti" size="l" onPress={() => setStage('question')} />}>
-        <View style={{ alignItems: 'center', gap: 12 }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
-            <Feather name={icon} size={32} color={accent} />
-          </View>
-          <T variant="caption" color={accent} style={{ letterSpacing: 1 }}>
-            {kicker.toUpperCase()}
-          </T>
-          <T variant="title" center>
-            {title}
-          </T>
-          <T variant="body" color={palette.textMuted} center>
-            {rule}
-          </T>
-        </View>
-      </ScreenBody>
+      <ModeTitleCard color={color} ink={ink} icon={icon} kicker={kicker} title={title} rule={rule} cta="C’est parti" onStart={() => setStage('question')} />
     );
   }
 

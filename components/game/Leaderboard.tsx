@@ -1,13 +1,15 @@
 import { View, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { Avatar } from '@/components/ui/Avatar';
 import { T } from '@/components/ui/Typography';
-import { palette, radius, shadow, space, fonts } from '@/theme/tokens';
+import { fonts, OUTLINE, palette, radius, space } from '@/theme/tokens';
 
 type LeaderboardPlayer = {
   id: string;
   name: string;
   score: number;
   color?: string;
+  profileId?: string;
   played?: number;
   correct?: number;
   jokerUsed?: boolean;
@@ -35,11 +37,11 @@ export function Leaderboard({ players, deltas }: LeaderboardProps) {
         const delta = deltas?.[p.id] ?? 0;
         const detailed = p.played !== undefined && p.correct !== undefined;
         return (
-          <View key={p.id} style={styles.row}>
+          <View key={p.id} style={[styles.row, idx === 0 && p.score > 0 && styles.leader]}>
             <T variant="heading" color={palette.textMuted} numeric style={styles.rank}>
               {rank ?? '='}
             </T>
-            <View style={[styles.dot, { backgroundColor: p.color ?? palette.primary }]} />
+            <Avatar name={p.name} color={p.color} profileId={p.profileId} size={36} />
             <View style={styles.names}>
               <T variant="body" style={styles.name} numberOfLines={1}>
                 {p.name}
@@ -70,7 +72,7 @@ export function Leaderboard({ players, deltas }: LeaderboardProps) {
                 accessibilityLabel={p.jokerUsed ? 'Joker utilisé' : 'Joker disponible'}
               />
             )}
-            <T variant="title" color={palette.gold} numeric style={styles.score}>
+            <T variant="title" color={palette.ink} numeric style={styles.score}>
               {p.score}
             </T>
           </View>
@@ -90,8 +92,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     paddingVertical: space.md,
     paddingHorizontal: space.md,
-    ...shadow.card,
+    borderWidth: OUTLINE,
+    borderColor: palette.line,
   },
+  leader: { backgroundColor: palette.goldSoft },
   rank: { width: 24, textAlign: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },
   names: { flex: 1 },

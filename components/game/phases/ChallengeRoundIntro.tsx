@@ -1,9 +1,4 @@
-import { View } from 'react-native';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { ScreenBody } from '@/components/ui/Screen';
-import { T } from '@/components/ui/Typography';
+import { ModeTitleCard } from '@/components/ui/ModeTitleCard';
 import { palette } from '@/theme/tokens';
 
 type ChallengeRoundIntroProps = {
@@ -16,31 +11,19 @@ type ChallengeRoundIntroProps = {
 
 export function ChallengeRoundIntro({ round, total, level, isAuctionRound, onStart }: ChallengeRoundIntroProps) {
   return (
-    <ScreenBody center bottom={<Button label={isAuctionRound ? "Lancer l'enchère" : 'Commencer'} size="l" onPress={onStart} />}>
-      <Card tone={isAuctionRound ? 'gold' : 'default'} borderColor={isAuctionRound ? palette.gold : palette.border}>
-        <View style={{ alignItems: 'center', gap: 12, paddingVertical: 16 }}>
-          <T variant="caption" color={palette.gold} style={{ letterSpacing: 1 }}>
-            {isAuctionRound ? `DÉFI ${round} / ${total} · ENCHÈRES` : `DÉFI ${round} / ${total}`}
-          </T>
-          {isAuctionRound ? (
-            <T variant="title" center>
-              Round Enchères
-            </T>
-          ) : (
-            <>
-              <T variant="display" numeric>
-                Niveau {level}
-              </T>
-              <Badge label={`${level} pts par bonne réponse`} color={palette.goldSoft} textColor={palette.gold} />
-            </>
-          )}
-          <T variant="body" color={palette.textMuted} center>
-            {isAuctionRound
-              ? 'Les joueurs enchérissent sur le niveau. Le gagnant répond dans son propre thème.'
-              : 'Tout le monde reçoit une question de ce niveau, dans le thème qu’il a choisi.'}
-          </T>
-        </View>
-      </Card>
-    </ScreenBody>
+    <ModeTitleCard
+      color={isAuctionRound ? '#FF9F1C' : palette.steal}
+      icon={isAuctionRound ? 'trending-up' : 'flag'}
+      kicker={`Défi ${round} sur ${total}`}
+      title={isAuctionRound ? 'Enchères !' : `Niveau ${level}`}
+      rule={
+        isAuctionRound
+          ? 'Les joueurs enchérissent sur le niveau. Le gagnant répond dans son propre thème.'
+          : `Tout le monde reçoit une question de niveau ${level}, dans le thème qu’il a choisi. ${level} points par bonne réponse.`
+      }
+      mood="hype"
+      cta={isAuctionRound ? 'Lancer l’enchère' : 'Commencer'}
+      onStart={onStart}
+    />
   );
 }

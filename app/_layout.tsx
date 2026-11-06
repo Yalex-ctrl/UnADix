@@ -8,6 +8,7 @@ import { GameProvider } from '@/context/GameContext';
 import { ProfilesProvider } from '@/context/ProfilesContext';
 import { RoomProvider } from '@/context/RoomContext';
 import { loadHapticsSetting } from '@/lib/haptics';
+import { loadSoundSetting } from '@/lib/sounds';
 import { palette } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -23,6 +24,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     loadHapticsSetting();
+    loadSoundSetting();
   }, []);
 
   useEffect(() => {

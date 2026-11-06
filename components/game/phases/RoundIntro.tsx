@@ -1,43 +1,38 @@
-import { View } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { ModeTitleCard } from '@/components/ui/ModeTitleCard';
+import { Roulette } from '@/components/ui/Roulette';
 import { ScreenBody } from '@/components/ui/Screen';
-import { T } from '@/components/ui/Typography';
 import { palette } from '@/theme/tokens';
 
 type RoundIntroProps = {
   round: number;
   total: number;
-  categoryName: string;
+  categoryId: string;
   categoryDescription: string;
   isAuctionRound: boolean;
   onStart: () => void;
 };
 
-export function RoundIntro({ round, total, categoryName, categoryDescription, isAuctionRound, onStart }: RoundIntroProps) {
+export function RoundIntro({ round, total, categoryId, categoryDescription, isAuctionRound, onStart }: RoundIntroProps) {
+  if (isAuctionRound) {
+    return (
+      <ModeTitleCard
+        color="#FF9F1C"
+        icon="trending-up"
+        kicker={`Manche ${round} sur ${total}`}
+        title="Enchères !"
+        rule="Annoncez à voix haute le niveau auquel vous pensez pouvoir répondre. Le plus audacieux gagne l’enchère."
+        mood="hype"
+        cta="Lancer l’enchère"
+        onStart={onStart}
+      />
+    );
+  }
   return (
-    <ScreenBody
-      center
-      bottom={<Button label={isAuctionRound ? "Lancer l'enchère" : 'Choisir les niveaux'} size="l" onPress={onStart} />}
-    >
-      <Card tone={isAuctionRound ? 'gold' : 'default'} borderColor={isAuctionRound ? palette.gold : palette.border}>
-        <View style={{ gap: 12, alignItems: 'center', paddingVertical: 16 }}>
-          <T variant="caption" color={isAuctionRound ? palette.gold : palette.primary} style={{ letterSpacing: 1 }}>
-            {isAuctionRound ? `MANCHE ${round} · ENCHÈRES` : `MANCHE ${round} SUR ${total}`}
-          </T>
-          <T variant="display" center>
-            {categoryName}
-          </T>
-          <T variant="body" color={palette.textMuted} center>
-            {categoryDescription}
-          </T>
-          {isAuctionRound && (
-            <T variant="caption" color={palette.gold} center>
-              Les joueurs enchérissent à voix haute sur le niveau (1 à 10) auquel ils pensent pouvoir répondre.
-            </T>
-          )}
-        </View>
-      </Card>
+    <ScreenBody center bottom={<Button label="Choisir les niveaux" size="xl" onPress={onStart} />}>
+      <Roulette categoryId={categoryId} description={categoryDescription} round={round} total={total} />
     </ScreenBody>
   );
 }
+
+export const roundIntroInk = palette.ink;
