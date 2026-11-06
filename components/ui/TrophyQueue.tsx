@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, ZoomIn, BounceInUp } from 'react-native-reanimated';
+import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { haptic } from '@/lib/haptics';
 import { playSound } from '@/lib/sounds';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -45,16 +45,16 @@ export function TrophyQueue({ events, players, onDone }: TrophyQueueProps) {
   if (!current || !trophy || !player) return null;
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={next}>
+    <View style={styles.overlay}>
       <Pressable style={styles.backdrop} onPress={next} accessibilityLabel="Continuer">
         <Confetti gold />
-        <Animated.View entering={reduced ? FadeIn : ZoomIn.springify().damping(12)} style={styles.cardWrap}>
+        <Animated.View entering={reduced ? undefined : FadeInDown.duration(350)} style={styles.cardWrap}>
           <View style={styles.shadow} />
           <View style={styles.card}>
             <T variant="caption" color={palette.goldDeep} style={styles.kicker}>
               NOUVEAU TROPHÉE
             </T>
-            <Animated.View entering={reduced ? FadeIn : BounceInUp.delay(150).duration(700)}>
+            <Animated.View entering={reduced ? undefined : FadeIn.delay(150).duration(500)}>
               <TrophyBadge id={current.trophyId} emoji={trophy.emoji} size={112} />
             </Animated.View>
             <T variant="title" center>
@@ -73,11 +73,12 @@ export function TrophyQueue({ events, players, onDone }: TrophyQueueProps) {
           </View>
         </Animated.View>
       </Pressable>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFill, zIndex: 100, elevation: 100 },
   backdrop: { flex: 1, backgroundColor: palette.scrim, alignItems: 'center', justifyContent: 'center', padding: space.xl },
   cardWrap: { width: '100%', maxWidth: 380, paddingRight: POP_OFFSET, paddingBottom: POP_OFFSET },
   shadow: { position: 'absolute', top: POP_OFFSET, left: POP_OFFSET, right: 0, bottom: 0, borderRadius: radius.card, backgroundColor: palette.ink },
