@@ -14,8 +14,11 @@ export type Category = {
   shortDescription: string;
 };
 
+export type StatBucket = { played: number; correct: number };
+
 export type Player = {
   id: string;
+  profileId?: string; // profil persistant (jamais affiché)
   name: string;
   color: string;
   score: number;
@@ -33,6 +36,8 @@ export type Player = {
   stealWins: number;
   maxStolen: number; // highest level stolen
   trophies: string[];
+  levelStats: Record<number, StatBucket>; // réussite par niveau (questions personnelles)
+  themeStats: Record<string, StatBucket>; // réussite par thème
 };
 
 export type Judgement = 'correct' | 'incorrect' | 'accepted-anyway';

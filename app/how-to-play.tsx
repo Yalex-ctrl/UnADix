@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Header } from '@/components/ui/Header';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/Typography';
-import { palette } from '@/theme/tokens';
+import { palette, fonts } from '@/theme/tokens';
 
 const RULES = [
   {
@@ -46,7 +46,7 @@ export default function HowToPlayScreen() {
     <Screen header={<Header title="Comment jouer ?" onBack={() => router.back()} />} gap={12}>
       {RULES.map((rule) => (
         <Card key={rule.title} style={{ gap: 6 }}>
-          <T variant="body" color={palette.primary} style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+          <T variant="body" color={palette.primary} style={{ fontFamily: fonts.bold }}>
             {rule.title}
           </T>
           <T variant="body" color={palette.textMuted}>

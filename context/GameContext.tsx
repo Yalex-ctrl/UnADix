@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { CATEGORIES } from '@/data/categories';
 import { activePlayerId, initialState, reducer, StartOptions } from '@/lib/gameReducer';
+import { bootstrapProfiles } from '@/lib/profileStore';
 import { clearSavedGame, loadSavedGame, saveFinishedGame, saveGame } from '@/lib/storage';
 import { ConnectionMode, GameState, Judgement, Player } from '@/types';
 
@@ -8,7 +9,7 @@ type GameContextValue = {
   state: GameState;
   hydrated: boolean;
   startGame: (
-    players: { name: string }[],
+    players: { name: string; profileId?: string; color?: string }[],
     totalRounds: number,
     connectionMode: ConnectionMode,
     options?: Partial<StartOptions>
@@ -51,7 +52,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    loadSavedGame().then((saved) => {
+    // La migration des profils doit avoir réécrit la sauvegarde avant sa lecture.
+    bootstrapProfiles()
+      .catch(() => [])
+      .then(() => loadSavedGame())
+      .then((saved) => {
       if (saved) dispatch({ type: 'LOAD', state: saved });
       setHydrated(true);
     });

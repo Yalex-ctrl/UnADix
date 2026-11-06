@@ -2,33 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CATEGORIES } from '@/data/categories';
 import { migrateState, STATE_VERSION } from '@/lib/gameReducer';
 import { GameState } from '@/types';
+import { FinishedGame } from '@/types/history';
 
 const SAVED_GAME_KEY = 'unadix:savedGame';
 const HISTORY_KEY = 'unadix:history';
 const MAX_HISTORY = 100;
 
-export type FinishedPlayer = {
-  name: string;
-  score: number;
-  played: number;
-  correct: number;
-  jokerUsed: boolean;
-  bestStreak: number;
-  maxLevelWon: number;
-  levelSum: number;
-  levelCount: number;
-  stealWins: number;
-  trophies: string[];
-};
-
-export type FinishedGame = {
-  id: string;
-  date: string;
-  winnerName: string;
-  rounds: number;
-  themes: string[];
-  players: FinishedPlayer[];
-};
+export type { FinishedGame, FinishedPlayer } from '@/types/history';
 
 export async function saveGame(state: GameState): Promise<void> {
   try {
@@ -81,9 +61,11 @@ export async function saveFinishedGame(state: GameState): Promise<void> {
       id,
       date: new Date().toISOString(),
       winnerName: state.players.find((p) => p.id === state.finalWinnerId)?.name ?? sorted[0].name,
+      winnerId: (state.players.find((p) => p.id === state.finalWinnerId) ?? sorted[0]).profileId,
       rounds: state.totalRounds,
       themes: state.categoryOrder.map((id) => CATEGORIES.find((c) => c.id === id)?.name ?? id),
       players: state.players.map((p) => ({
+        profileId: p.profileId,
         name: p.name,
         score: p.score,
         played: p.played,
@@ -93,8 +75,11 @@ export async function saveFinishedGame(state: GameState): Promise<void> {
         maxLevelWon: p.maxLevelWon,
         levelSum: p.levelSum,
         levelCount: p.levelCount,
+        stealAttempts: p.stealAttempts,
         stealWins: p.stealWins,
         trophies: p.trophies,
+        levelStats: p.levelStats,
+        themeStats: p.themeStats,
       })),
     };
     // Même partie rejouée en mode Challenger : on met à jour l'entrée existante.

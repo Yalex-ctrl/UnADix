@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { T } from './Typography';
-import { palette, radius, space } from '@/theme/tokens';
+import { palette, radius, space, fonts } from '@/theme/tokens';
 
 // Bulle du présentateur TV : apparaît, puis disparaît seule sans bloquer le jeu.
 export function TvBubble({ text, duration = 6000 }: { text: string | null; duration?: number }) {
@@ -41,5 +41,5 @@ const styles = StyleSheet.create({
     padding: space.md,
   },
   icon: { width: 32, height: 32, borderRadius: 16, backgroundColor: palette.primary, alignItems: 'center', justifyContent: 'center' },
-  text: { flex: 1, fontFamily: 'PlusJakartaSans_600SemiBold' },
+  text: { flex: 1, fontFamily: fonts.semibold },
 });

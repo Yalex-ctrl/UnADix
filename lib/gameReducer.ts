@@ -69,7 +69,7 @@ export function initialState(): GameState {
 export type StartOptions = { thiefMode: boolean; tvHost: boolean };
 
 export type Action =
-  | { type: 'START_GAME'; players: { name: string }[]; totalRounds: number; connectionMode: ConnectionMode; options: StartOptions }
+  | { type: 'START_GAME'; players: { name: string; profileId?: string; color?: string }[]; totalRounds: number; connectionMode: ConnectionMode; options: StartOptions }
   | { type: 'BEGIN_LEVEL_SELECT' }
   | { type: 'CHOOSE_LEVEL'; playerId: string; level: number }
   | { type: 'REVEAL_ANSWER' }
@@ -156,11 +156,20 @@ function mapPlayer(players: Player[], id: string, fn: (p: Player) => Player): Pl
   return players.map((p) => (p.id === id ? fn(p) : p));
 }
 
-function scoreAnswer(p: Player, level: number, correct: boolean): Player {
-  if (!correct) return { ...p, played: p.played + 1, streak: 0, jokerPending: false };
+function bump(map: Record<string | number, { played: number; correct: number }>, key: string | number, correct: boolean) {
+  const cur = map[key] ?? { played: 0, correct: 0 };
+  return { ...map, [key]: { played: cur.played + 1, correct: cur.correct + (correct ? 1 : 0) } };
+}
+
+function scoreAnswer(p: Player, level: number, correct: boolean, categoryId?: string): Player {
+  const levelStats = bump(p.levelStats ?? {}, level, correct) as Player['levelStats'];
+  const themeStats = categoryId ? (bump(p.themeStats ?? {}, categoryId, correct) as Player['themeStats']) : p.themeStats ?? {};
+  if (!correct) return { ...p, levelStats, themeStats, played: p.played + 1, streak: 0, jokerPending: false };
   const streak = p.streak + 1;
   return {
     ...p,
+    levelStats,
+    themeStats,
     score: p.score + level,
     played: p.played + 1,
     correct: p.correct + 1,
@@ -297,7 +306,8 @@ function coreReducer(state: GameState, action: Action): GameState {
       const players: Player[] = action.players.map((p, idx) => ({
         id: `player-${idx}-${stamp}`,
         name: p.name.trim() || `Joueur ${idx + 1}`,
-        color: PLAYER_COLORS[idx % PLAYER_COLORS.length],
+        profileId: p.profileId,
+        color: p.color ?? PLAYER_COLORS[idx % PLAYER_COLORS.length],
         score: 0,
         jokerUsed: false,
         jokerPending: false,
@@ -313,6 +323,8 @@ function coreReducer(state: GameState, action: Action): GameState {
         stealWins: 0,
         maxStolen: 0,
         trophies: [],
+        levelStats: {},
+        themeStats: {},
       }));
       const totalRounds = action.totalRounds;
       const playerIds = players.map((p) => p.id);
@@ -383,7 +395,7 @@ function coreReducer(state: GameState, action: Action): GameState {
 
       if (state.auctionWinnerId) {
         const level = state.auctionLevel ?? 0;
-        const players = mapPlayer(state.players, state.auctionWinnerId, (p) => scoreAnswer(p, level, correct));
+        const players = mapPlayer(state.players, state.auctionWinnerId, (p) => scoreAnswer(p, level, correct, categoryIdForPlayer(state, state.auctionWinnerId!)));
         return goToSummary({
           ...state,
           players,
@@ -400,7 +412,7 @@ function coreReducer(state: GameState, action: Action): GameState {
         const { braqueurId, targetId } = state.braquage;
         const level = levelForPlayer(state, targetId);
         let players = mapPlayer(state.players, braqueurId, (p) => ({
-          ...scoreAnswer(p, level, correct),
+          ...scoreAnswer(p, level, correct, categoryIdForPlayer(state, targetId)),
           stealAttempts: p.stealAttempts + 1,
           stealWins: p.stealWins + (correct ? 1 : 0),
           maxStolen: correct ? Math.max(p.maxStolen, level) : p.maxStolen,
@@ -420,7 +432,7 @@ function coreReducer(state: GameState, action: Action): GameState {
 
       const playerId = state.turnOrder[state.currentTurnIndex];
       const level = levelForPlayer(state, playerId);
-      const players = mapPlayer(state.players, playerId, (p) => scoreAnswer(p, level, correct));
+      const players = mapPlayer(state.players, playerId, (p) => scoreAnswer(p, level, correct, categoryIdForPlayer(state, playerId)));
       const next = {
         ...state,
         players,
@@ -748,6 +760,8 @@ const PLAYER_DEFAULTS = {
   stealAttempts: 0,
   stealWins: 0,
   maxStolen: 0,
+  levelStats: {},
+  themeStats: {},
 };
 
 // Remet une sauvegarde (de n'importe quelle version précédente) à la forme

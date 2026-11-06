@@ -27,7 +27,9 @@
           "backgroundColor": "#141221"
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-image",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

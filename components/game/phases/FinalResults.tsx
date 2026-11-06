@@ -6,7 +6,7 @@ import { ScreenBody } from '@/components/ui/Screen';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { T } from '@/components/ui/Typography';
 import { TROPHIES } from '@/lib/trophies';
-import { palette, radius, shadow } from '@/theme/tokens';
+import { palette, radius, shadow, fonts } from '@/theme/tokens';
 import { Player } from '@/types';
 import { Leaderboard } from '../Leaderboard';
 
@@ -73,7 +73,7 @@ export function FinalResults({ players, winnerId, isChallenge, onReplay, onHome,
           const rank = sorted.indexOf(p);
           return (
             <View key={p.id} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-              <T variant="body" style={{ fontFamily: 'PlusJakartaSans_700Bold' }} numberOfLines={1}>
+              <T variant="body" style={{ fontFamily: fonts.bold }} numberOfLines={1}>
                 {p.name}
               </T>
               <View
@@ -112,7 +112,7 @@ export function FinalResults({ players, winnerId, isChallenge, onReplay, onHome,
 
       {sorted.map((p) => (
         <Card key={p.id} style={{ gap: 2 }}>
-          <T variant="body" color={p.color} style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+          <T variant="body" color={p.color} style={{ fontFamily: fonts.bold }}>
             {p.name}
           </T>
           <T variant="caption" color={palette.textMuted}>
@@ -136,7 +136,7 @@ export function FinalResults({ players, winnerId, isChallenge, onReplay, onHome,
                 style={{ width: '48%', backgroundColor: palette.goldSoft, borderRadius: radius.button, padding: 12, gap: 2 }}
               >
                 <T variant="heading">{TROPHIES[id]?.emoji}</T>
-                <T variant="caption" style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+                <T variant="caption" style={{ fontFamily: fonts.bold }}>
                   {TROPHIES[id]?.name}
                 </T>
                 <T variant="caption" color={palette.textMuted}>

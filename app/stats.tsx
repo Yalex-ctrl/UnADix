@@ -8,7 +8,7 @@ import { Screen } from '@/components/ui/Screen';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { T } from '@/components/ui/Typography';
 import { clearHistory, FinishedGame, loadHistory } from '@/lib/storage';
-import { palette } from '@/theme/tokens';
+import { palette, fonts } from '@/theme/tokens';
 
 type PlayerStats = {
   name: string;
@@ -128,7 +128,7 @@ export default function StatsScreen() {
           <SectionTitle>Historique</SectionTitle>
           {history.map((g) => (
             <Card key={g.id} style={{ gap: 4 }}>
-              <T variant="body" style={{ fontFamily: 'PlusJakartaSans_700Bold' }}>
+              <T variant="body" style={{ fontFamily: fonts.bold }}>
                 {g.winnerName} l’emporte · {g.rounds} manches
               </T>
               <T variant="caption" color={palette.textMuted}>

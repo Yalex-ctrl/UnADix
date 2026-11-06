@@ -1,6 +1,6 @@
 import { StyleSheet, Switch, View } from 'react-native';
 import { T } from './Typography';
-import { palette, radius, space } from '@/theme/tokens';
+import { palette, radius, space, fonts } from '@/theme/tokens';
 
 type SwitchRowProps = {
   title: string;
@@ -46,5 +46,5 @@ const styles = StyleSheet.create({
     padding: space.md,
   },
   texts: { flex: 1, gap: 2 },
-  title: { fontFamily: 'PlusJakartaSans_700Bold' },
+  title: { fontFamily: fonts.bold },
 });

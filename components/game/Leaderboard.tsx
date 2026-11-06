@@ -1,7 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { T } from '@/components/ui/Typography';
-import { palette, radius, shadow, space } from '@/theme/tokens';
+import { palette, radius, shadow, space, fonts } from '@/theme/tokens';
 
 type LeaderboardPlayer = {
   id: string;
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   rank: { width: 24, textAlign: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },
   names: { flex: 1 },
-  name: { fontFamily: 'PlusJakartaSans_700Bold' },
+  name: { fontFamily: fonts.bold },
   delta: { flexDirection: 'row', alignItems: 'center' },
   score: { minWidth: 36, textAlign: 'right' },
 });
