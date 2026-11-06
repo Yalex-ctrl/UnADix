@@ -29,7 +29,7 @@ export function Confetti({ count = 36, gold = false }: { count?: number; gold?: 
   const reduced = useReducedMotion();
   // Tirage unique au montage (lazy init), pas à chaque rendu.
   const [pieces] = useState(() => {
-    const colors = gold ? [palette.gold, palette.goldDeep, '#FFFFFF', palette.brand] : [...LEVEL_COLORS, palette.brand];
+    const colors = gold ? [palette.gold, palette.goldDeep, palette.white, palette.brand] : [...LEVEL_COLORS, palette.brand];
     return Array.from({ length: count }, (_, i) => ({
       key: i,
       x: Math.random() * width,

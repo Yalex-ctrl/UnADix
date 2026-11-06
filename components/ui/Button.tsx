@@ -40,9 +40,9 @@ const ALIAS: Record<ButtonVariant, Core> = {
 
 // Texte encre sur les couleurs claires (vert, jaune, cyan), blanc sur violet et rouge.
 const LOOKS: Record<Core, { face: string; deep: string; fg: string }> = {
-  brand: { face: palette.brand, deep: palette.brandDeep, fg: '#FFFFFF' },
+  brand: { face: palette.brand, deep: palette.brandDeep, fg: palette.white },
   good: { face: palette.good, deep: palette.goodDeep, fg: palette.ink },
-  bad: { face: palette.bad, deep: palette.badDeep, fg: '#FFFFFF' },
+  bad: { face: palette.bad, deep: palette.badDeep, fg: palette.white },
   gold: { face: palette.gold, deep: palette.goldDeep, fg: palette.ink },
   steal: { face: palette.steal, deep: palette.stealDeep, fg: palette.ink },
   white: { face: palette.surface, deep: palette.ink, fg: palette.ink },

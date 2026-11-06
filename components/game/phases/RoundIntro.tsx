@@ -17,7 +17,7 @@ export function RoundIntro({ round, total, categoryId, categoryDescription, isAu
   if (isAuctionRound) {
     return (
       <ModeTitleCard
-        color="#FF9F1C"
+        color={palette.orange}
         icon="trending-up"
         kicker={`Manche ${round} sur ${total}`}
         title="Enchères !"

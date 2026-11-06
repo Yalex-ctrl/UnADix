@@ -29,8 +29,8 @@ export function Chip({ label, selected, color = palette.primary, disabled, onPre
       ]}
     >
       <View style={styles.row}>
-        {selected && <Feather name="check" size={16} color="#FFFFFF" />}
-        <Text style={[styles.label, { color: selected ? '#FFFFFF' : palette.text }]}>{label}</Text>
+        {selected && <Feather name="check" size={16} color={palette.white} />}
+        <Text style={[styles.label, { color: selected ? palette.white : palette.text }]}>{label}</Text>
       </View>
     </Pressable>
   );

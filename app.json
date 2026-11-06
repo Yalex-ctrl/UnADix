@@ -5,13 +5,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "unadix",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#141221"
+        "backgroundColor": "#FFF8EE"
       }
     },
     "web": {
@@ -24,12 +24,19 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#141221"
+          "backgroundColor": "#FFF8EE"
         }
       ],
       "expo-status-bar",
       "expo-image",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "1 à 10 accède à ta galerie pour choisir la photo d'un joueur.",
+          "cameraPermission": "1 à 10 utilise l'appareil photo pour prendre la photo d'un joueur."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -31,7 +31,7 @@ export function BottomSheet({ visible, title, subtitle, onClose, children }: Bot
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(26,26,31,0.35)' },
+  backdrop: { flex: 1, backgroundColor: palette.scrimLight },
   sheet: {
     backgroundColor: palette.surface,
     borderTopLeftRadius: 24,

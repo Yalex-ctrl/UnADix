@@ -78,7 +78,7 @@ export function TrophyQueue({ events, players, onDone }: TrophyQueueProps) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(27,21,48,0.55)', alignItems: 'center', justifyContent: 'center', padding: space.xl },
+  backdrop: { flex: 1, backgroundColor: palette.scrim, alignItems: 'center', justifyContent: 'center', padding: space.xl },
   cardWrap: { width: '100%', maxWidth: 380, paddingRight: POP_OFFSET, paddingBottom: POP_OFFSET },
   shadow: { position: 'absolute', top: POP_OFFSET, left: POP_OFFSET, right: 0, bottom: 0, borderRadius: radius.card, backgroundColor: palette.ink },
   card: {

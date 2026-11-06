@@ -36,7 +36,7 @@ export function BreakingBanner({ text, trigger }: { text: string; trigger: numbe
   return (
     <View pointerEvents="none" style={styles.layer}>
       <Animated.View style={[styles.banner, style]}>
-        <T variant="display" color="#FFFFFF" center numberOfLines={1} adjustsFontSizeToFit>
+        <T variant="display" color={palette.white} center numberOfLines={1} adjustsFontSizeToFit>
           {text}
         </T>
       </Animated.View>

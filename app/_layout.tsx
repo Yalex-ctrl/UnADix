@@ -49,6 +49,7 @@ export default function RootLayout() {
           <Stack.Screen name="setup/players" />
           <Stack.Screen name="game" />
           <Stack.Screen name="stats" />
+          <Stack.Screen name="playground" />
           <Stack.Screen name="players/index" />
           <Stack.Screen name="players/[id]" />
           <Stack.Screen name="multiplayer/index" />

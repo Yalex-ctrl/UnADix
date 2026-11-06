@@ -186,8 +186,8 @@ export default function GameScreen() {
         kicker: 'Duel All-In',
         title: `${nameOf(k.contenders[0])} contre ${nameOf(k.contenders[1])}`,
         rule: `Mise : ${k.stake} points. Même question pour les deux : le gagnant ramasse la mise.`,
-        color: '#9B1BFF',
-        ink: '#FFFFFF',
+        color: palette.purple,
+        ink: palette.white,
       };
     }
     if (k.context === 'final') {
@@ -197,7 +197,7 @@ export default function GameScreen() {
         title: 'Égalité en tête !',
         rule: 'Seuls les joueurs à égalité répondent. On continue jusqu’à un vainqueur unique.',
         color: palette.bad,
-        ink: '#FFFFFF',
+        ink: palette.white,
       };
     }
     return {
@@ -206,7 +206,7 @@ export default function GameScreen() {
       title: 'Plusieurs bonnes réponses',
       rule: 'Cette question départage uniquement les joueurs concernés. Le gagnant remporte les 10 points.',
       color: palette.bad,
-      ink: '#FFFFFF',
+      ink: palette.white,
     };
   })();
 

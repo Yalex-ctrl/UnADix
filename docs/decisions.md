@@ -14,3 +14,9 @@
 | 10 | Statistique « braquages » | Comptée avec les vols (tentés/réussis) | Compteur séparé | Le braquage est un vol de question ; le modèle ne les distingue pas. |
 | 11 | Meilleur/pire thème | Au moins 2 questions jouées | 1 | Sous 2 questions le taux n'est pas significatif. |
 | 12 | Rival | Adversaire le plus souvent affronté ; bilan = parties où ton score est supérieur / inférieur | Bilan par vainqueur de partie | Plus parlant en parties à plus de 2 joueurs. |
+| 13 | Boucle de qualité visuelle (§7) | **Non réalisée** : aucune capture d'écran n'a pu être produite | Serveur web local + Chrome headless | Mon essai (serveur local + capture) a été refusé par l'environnement, et le rendu `file://` est blanc (routes absolues d'expo-router). Je ne l'ai pas contourné. Aucune critique visuelle n'a donc été faite : les choix de couleurs, tailles et espacements reposent sur le code et les règles de contraste, pas sur un rendu observé. |
+| 14 | Thème clair uniquement | `userInterfaceStyle: light` | Suivre le thème système | Le design « Studio Pop » n'a qu'une palette claire. |
+| 15 | Réponse en mode Voleur | « Maintenir appuyé » pour lire (écran de tentative de vol) ; bouton « voir » sur l'écran de verdict | Toujours masquée | Spécifié par le cahier des charges ; la lecture disparaît dès qu'on relâche. |
+| 16 | Points qui s'envolent | Simplifié : le score du bandeau fait un rebond à chaque changement, confettis sur « Juste » | Animation de points qui voyagent de la carte au bandeau | Non faite faute de pouvoir la régler visuellement ; le rebond du compteur couvre l'effet « les points arrivent ». |
+| 17 | Trophées | Modale plein écran, un par un, à toucher pour continuer | Toast | Demandé par le cahier des charges. |
+| 18 | Réduire les animations | Roulette sans défilement, retournement en fondu, confettis et formes supprimés, bandeaux sans glissement | Ralentir seulement | Respect strict de la préférence système. |

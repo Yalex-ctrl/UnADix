@@ -26,7 +26,7 @@ export function SwitchRow({ title, description, value, onValueChange }: SwitchRo
         value={value}
         onValueChange={onValueChange}
         trackColor={{ false: palette.border, true: palette.primary }}
-        thumbColor="#FFFFFF"
+        thumbColor={palette.white}
         ios_backgroundColor={palette.border}
         accessibilityLabel={title}
       />

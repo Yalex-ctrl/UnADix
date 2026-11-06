@@ -12,7 +12,7 @@ type ChallengeRoundIntroProps = {
 export function ChallengeRoundIntro({ round, total, level, isAuctionRound, onStart }: ChallengeRoundIntroProps) {
   return (
     <ModeTitleCard
-      color={isAuctionRound ? '#FF9F1C' : palette.steal}
+      color={isAuctionRound ? palette.orange : palette.steal}
       icon={isAuctionRound ? 'trending-up' : 'flag'}
       kicker={`Défi ${round} sur ${total}`}
       title={isAuctionRound ? 'Enchères !' : `Niveau ${level}`}

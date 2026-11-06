@@ -36,8 +36,8 @@ export function Lulu({ mood = 'neutral', size = 72 }: { mood?: LuluMood; size?: 
         <Line x1={16} y1={66} x2={72} y2={66} />
       </G>
       {/* yeux */}
-      <Circle cx={31} cy={40} r={9} fill="#FFFFFF" stroke={ink} strokeWidth={2.5} />
-      <Circle cx={57} cy={40} r={9} fill="#FFFFFF" stroke={ink} strokeWidth={2.5} />
+      <Circle cx={31} cy={40} r={9} fill={palette.white} stroke={ink} strokeWidth={2.5} />
+      <Circle cx={57} cy={40} r={9} fill={palette.white} stroke={ink} strokeWidth={2.5} />
       <Circle cx={31} cy={pupilY} r={eyeR - 2} fill={ink} />
       <Circle cx={57} cy={pupilY} r={eyeR - 2} fill={ink} />
       {brows[mood].map((d) => (

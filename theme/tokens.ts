@@ -38,6 +38,18 @@ export const palette = {
   stealDeep: '#0084C2',
   stealSoft: '#DDF3FF',
 
+  // Divers
+  white: '#FFFFFF',
+  scrim: 'rgba(27,21,48,0.55)',
+  scrimLight: 'rgba(27,21,48,0.35)',
+  orange: '#FF9F1C',
+  purple: '#9B1BFF',
+  peach: '#FFB48A',
+  rose: '#E5246F',
+  indigo: '#3D5AFE',
+  teal: '#14C8B8',
+  ember: '#FF7A3D',
+
   // Alias conservés pour les écrans existants et le multi-téléphones.
   success: '#15803D', // texte « juste » lisible sur fond clair
   successSoft: '#E6F9EE',

@@ -4,16 +4,16 @@ import { OUTLINE, palette } from '@/theme/tokens';
 
 // Couleur propre à chaque trophée, pour que les badges se distinguent d'un coup d'œil.
 const TROPHY_COLORS: Record<string, string> = {
-  aventurier: '#FF9F1C',
-  sage: '#6C3BFF',
-  sniper: '#FF4D5E',
-  phenix: '#FF7A3D',
-  toutOuRien: '#9B1BFF',
-  chanceux: '#22C55E',
-  roiDuTheme: '#FFC233',
-  braqueur: '#3D5AFE',
-  kamikaze: '#E5246F',
-  survivant: '#14C8B8',
+  aventurier: palette.orange,
+  sage: palette.brand,
+  sniper: palette.bad,
+  phenix: palette.ember,
+  toutOuRien: palette.purple,
+  chanceux: palette.good,
+  roiDuTheme: palette.gold,
+  braqueur: palette.indigo,
+  kamikaze: palette.rose,
+  survivant: palette.teal,
 };
 
 export const trophyColor = (id: string) => TROPHY_COLORS[id] ?? palette.gold;
@@ -34,7 +34,7 @@ export function TrophyBadge({ id, emoji, size = 72, count }: { id: string; emoji
       </View>
       {count && count > 1 ? (
         <View style={styles.count}>
-          <T variant="caption" color="#FFFFFF" style={{ fontSize: 12, lineHeight: 14 }}>
+          <T variant="caption" color={palette.white} style={{ fontSize: 12, lineHeight: 14 }}>
             ×{count}
           </T>
         </View>

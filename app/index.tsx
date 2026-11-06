@@ -93,6 +93,7 @@ export default function HomeScreen() {
               {link('smile', 'Joueurs', '/players')}
               {link('bar-chart-2', 'Statistiques', '/stats')}
               {link('help-circle', 'Comment jouer ?', '/how-to-play')}
+              {__DEV__ && link('layers', 'Playground', '/playground')}
             </View>
           </View>
         </View>

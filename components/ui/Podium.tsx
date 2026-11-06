@@ -13,7 +13,7 @@ export function Podium({ players }: { players: PodiumPlayer[] }) {
   const top = players.slice(0, 3);
   const order = [top[1], top[0], top[2]].filter(Boolean);
   const heights = [96, 128, 72];
-  const colors = [palette.bgDeep, palette.gold, '#FFB48A'];
+  const colors = [palette.bgDeep, palette.gold, palette.peach];
 
   return (
     <View style={styles.row}>
